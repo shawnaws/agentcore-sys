@@ -13,17 +13,6 @@ if [ -z "$COMMIT_SOURCE" ]; then
     if [ -f "$SCRATCH_FILE" ]; then
         echo "📝 Generating commit message from .scratch..."
         
-        # Extract the most recent change
-        CHANGE=$(grep -A 1 "**Change:**" "$SCRATCH_FILE" | tail -n 1 | sed 's/\*\*Change:\*\* //')
-        DETAILS=$(grep -A 5 "**Details:**" "$SCRATCH_FILE" | tail -n 4 | sed 's/^- //')
-        
-        if [ -n "$CHANGE" ]; then
-            # Write the commit message
-            echo "$CHANGE" > "$COMMIT_MSG_FILE"
-            echo "" >> "$COMMIT_MSG_FILE"
-            echo "$DETAILS" >> "$COMMIT_MSG_FILE"
-            echo "" >> "$COMMIT_MSG_FILE"
-            echo "# Auto-generated from .scratch file" >> "$COMMIT_MSG_FILE"
-        fi
+        q chat --trust-all-tools --no-interactive "Read the .scratch file containing granular change notes. Synthesize these into a professional git commit message that: 1. Starts with a conventional commit prefix (feat/fix/refactor/chore/docs) 2. Summarizes the main change in under 50 characters 3. Adds a body with 2-4 bullet points for key details 4. Focuses on WHAT changed, not implementation details Output only the commit message, ready to use. Send the output to the appropriate $COMMIT_MSG_FILE"
     fi
 fi

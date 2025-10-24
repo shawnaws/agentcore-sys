@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Pre-commit hook that validates .scratch file exists
+# The actual commit message generation happens in prepare-commit-msg
+
+SCRATCH_FILE="../.scratch"
+
+# Check if .scratch exists
+if [ ! -f "$SCRATCH_FILE" ]; then
+    echo "❌ Error: .scratch file not found"
+    echo "Please create a .scratch file with your change notes before committing"
+    exit 1
+fi
+
+# Check if .scratch has content
+if [ ! -s "$SCRATCH_FILE" ]; then
+    echo "❌ Error: .scratch file is empty"
+    echo "Please add change notes to .scratch before committing"
+    exit 1
+fi
+
+echo "✅ .scratch file found and validated"
+exit 0

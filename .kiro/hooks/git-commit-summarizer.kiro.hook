@@ -4,7 +4,7 @@
   "description": "Manually triggered hook that reads .scratch file and generates a git commit message",
   "version": "1",
   "when": {
-    "type": "manual"
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",
