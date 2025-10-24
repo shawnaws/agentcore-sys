@@ -4,11 +4,11 @@
 
 ### infra/bin/infra.ts
 **Timestamp:** Just now
-**Change:** Removed agent003 configuration from agentConfigs array
+**Change:** Removed agent002 configuration from agentConfigs array
 **Details:** 
-- Deleted the agent003 configuration block that referenced '../../src/agent003'
-- Reduced agentConfigs array back to two agents (agent001 and agent002)
-- Likely removed because agent003 source directory doesn't exist yet
+- Deleted the agent002 configuration block that referenced '../../src/agent002'
+- Reduced agentConfigs array to single agent (agent001 only)
+- Cleaned up unused agent configuration
 
 ### infra/bin/infra.ts
 **Timestamp:** Earlier
