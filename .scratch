@@ -4,6 +4,14 @@
 
 ### infra/bin/infra.ts
 **Timestamp:** Just now
+**Change:** Removed agent003 configuration from agentConfigs array
+**Details:** 
+- Deleted the agent003 configuration block that referenced '../../src/agent003'
+- Reduced agentConfigs array back to two agents (agent001 and agent002)
+- Likely removed because agent003 source directory doesn't exist yet
+
+### infra/bin/infra.ts
+**Timestamp:** Earlier
 **Change:** Added agent003 configuration to agentConfigs array
 **Details:** 
 - Added agent003 with sourcePath '../../src/agent003' and USEGATEWAY environment variable set to "true"
