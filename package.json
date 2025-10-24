@@ -15,12 +15,13 @@
     "@types/node": "22.7.9",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
-    "aws-cdk": "2.1025.0",
+    "aws-cdk": "2.1030.0",
     "ts-node": "^10.9.2",
     "typescript": "~5.6.3"
   },
   "dependencies": {
-    "aws-cdk-lib": "2.208.0",
+    "@krokoko/agentcore-cdk-constructs": "file:agentcore-cdk-constructs@0.0.0.jsii.tgz",
+    "aws-cdk-lib": "^2.220.0",
     "constructs": "^10.0.0"
   }
 }

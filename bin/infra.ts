@@ -1,9 +1,36 @@
 #!/opt/homebrew/opt/node/bin/node
 import * as cdk from 'aws-cdk-lib';
-import { InfraStack } from '../lib/infra-stack';
+import { AgentCoreDevelopment } from '../lib/agent-core-development';
 
 const app = new cdk.App();
-new InfraStack(app, 'InfraStack', {
+new AgentCoreDevelopment(app, 'AgentCoreDev', {
+
+  openApiConfigs: [
+    {
+      description: "National Weather Service API Integration",
+      apiName: 'national-weather-service',
+      schemaPath: '../../src/openapi/sampleapi.json',
+      providerArn: 'arn:aws:bedrock-agentcore:us-west-2:376998848592:token-vault/default/apikeycredentialprovider/national-weather-service-user-agent',
+      secretArn: 'arn:aws:secretsmanager:us-west-2:376998848592:secret:bedrock-agentcore-identity!default/apikey/national-weather-service-user-agent-m8YDsG',
+      credentialProviderParamName: 'User-Agent'
+    },
+  ],
+  agentConfigs: [
+    {
+      agentName: 'agent001',
+      sourcePath: '../../src/agent001',
+      envVars: {
+        "USEGATEWAY": "true",
+      },
+    },
+    {
+      agentName: 'agent002',
+      sourcePath: '../../src/agent002',
+      envVars: {
+        "USEGATEWAY": "true",
+      },
+    }
+  ],
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
