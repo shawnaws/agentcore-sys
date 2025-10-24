@@ -29,6 +29,13 @@ new AgentCoreDevelopment(app, 'AgentCoreDev', {
       envVars: {
         "USEGATEWAY": "true",
       },
+    },
+    {
+      agentName: 'agent003',
+      sourcePath: '../../src/agent003',
+      envVars: {
+        "USEGATEWAY": "true",
+      },
     }
   ],
   /* If you don't specify 'env', this stack will be environment-agnostic.

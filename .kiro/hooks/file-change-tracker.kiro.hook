@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "File Change Tracker",
+  "description": "Monitors file saves and creates notes about changes in .scratch files for automated changelog generation",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.ts",
+      "**/*.py",
+      "**/*.js",
+      "**/*.yaml",
+      "**/*.json",
+      "**/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file has been saved. Please analyze what changes were made since the last save and create a concise note documenting these changes. Save this note in a .scratch file (create one if it doesn't exist) that can be used later to generate an automated changelog. Include the filename, timestamp, and a brief description of the modifications."
+  }
+}

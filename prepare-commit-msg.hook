@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Git hook to auto-generate commit message from .scratch file
+# This runs automatically when you do 'git commit' (without -m flag)
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Only run if this is a new commit (not amend, merge, etc.)
+if [ -z "$COMMIT_SOURCE" ]; then
+    SCRATCH_FILE="../.scratch"
+    
+    if [ -f "$SCRATCH_FILE" ]; then
+        echo "📝 Generating commit message from .scratch..."
+        
+        # Extract the most recent change
+        CHANGE=$(grep -A 1 "**Change:**" "$SCRATCH_FILE" | tail -n 1 | sed 's/\*\*Change:\*\* //')
+        DETAILS=$(grep -A 5 "**Details:**" "$SCRATCH_FILE" | tail -n 4 | sed 's/^- //')
+        
+        if [ -n "$CHANGE" ]; then
+            # Write the commit message
+            echo "$CHANGE" > "$COMMIT_MSG_FILE"
+            echo "" >> "$COMMIT_MSG_FILE"
+            echo "$DETAILS" >> "$COMMIT_MSG_FILE"
+            echo "" >> "$COMMIT_MSG_FILE"
+            echo "# Auto-generated from .scratch file" >> "$COMMIT_MSG_FILE"
+        fi
+    fi
+fi

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Generate Commit Message from .scratch",
+  "description": "Manually triggered hook that reads .scratch file and generates a git commit message",
+  "version": "1",
+  "when": {
+    "type": "manual"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Read the contents of the .scratch file and create a concise, well-formatted git commit message that summarizes the changes described in it. The commit message should follow best practices: a clear subject line (50 chars or less), followed by a blank line, then a more detailed explanation if needed. After generating the message, execute 'git commit -m \"<your generated message>\"' to commit the staged changes with this message."
+  }
+}

@@ -1,0 +1,18 @@
+# Changelog Notes
+
+## 2025-10-24 (Friday)
+
+### infra/bin/infra.ts
+**Timestamp:** Just now
+**Change:** Added agent003 configuration to agentConfigs array
+**Details:** 
+- Added agent003 with sourcePath '../../src/agent003' and USEGATEWAY environment variable set to "true"
+- This completes the agent configuration setup alongside agent001 and agent002
+
+### infra/bin/infra.ts
+**Timestamp:** Earlier
+**Change:** Added agent002 configuration to agentConfigs array
+**Details:** 
+- Removed duplicate agent002 entry that was previously defined
+- Added agent002 with sourcePath '../../src/agent002' and USEGATEWAY environment variable set to "true"
+- This appears to be fixing a configuration issue where agent002 was referenced but not properly defined in the array
