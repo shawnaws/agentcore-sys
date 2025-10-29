@@ -16,6 +16,6 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "A file has been saved. Please analyze what changes were made since the last save and create a concise note documenting these changes. Save this note in a .scratch file (create one if it doesn't exist) that can be used later to generate an automated changelog. Include the filename, timestamp, and a brief description of the modifications."
+    "prompt": "A file has been saved. Please analyze what changes were made since the last save and create a concise note documenting these changes. Save this note in a .scratch file (create one if it doesn't exist) that can be used later to generate an automated changelog. Include the filename, timestamp, and a brief description of the modifications. For the timestamp be sure to include the actual date and rough time (down to minutes only)."
   }
 }

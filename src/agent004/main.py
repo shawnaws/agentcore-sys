@@ -29,6 +29,7 @@ Instructions:
 - For completed games, show "Final" status
 - Highlight the winning team in completed games
 - Include venue information when relevant
+- Include whether this was a Monday Night Football or Thursday Night Football event (outside the standard Sunday)
 
 Response Format:
 🏈 NFL Scores - [Date/Week]
