@@ -22,6 +22,9 @@ new AgentCoreDevelopment(app, 'AgentCoreDev', {
       sourcePath: '../../src/agent001',
       envVars: {
         "USEGATEWAY": "true",
+        "AGENT002_URL": "${GATEWAY_URL}/mcp/agent002",
+        "AGENT003_URL": "${GATEWAY_URL}/mcp/agent003",
+        "AGENT004_URL": "${GATEWAY_URL}/mcp/agent004",
       },
     },
     {
@@ -29,6 +32,18 @@ new AgentCoreDevelopment(app, 'AgentCoreDev', {
       sourcePath: '../../src/agent002',
       protocol: "MCP",
       envVars: {},
-    }
+    },
+    {
+      agentName: 'agent003',
+      sourcePath: '../../src/agent003',
+      protocol: "MCP",
+      envVars: {},
+    },
+    {
+      agentName: 'agent004',
+      sourcePath: '../../src/agent004',
+      protocol: "MCP",
+      envVars: {},
+    },
   ],
 });

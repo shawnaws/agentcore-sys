@@ -290,7 +290,7 @@ export class AgentCoreDevelopment extends Stack {
     return openApiTargets;
   }
 
-  private createRuntimeAgent(name: string, assetPath: string, config: AgentConfig, extraVars: EnvVars, userPool?: UserPool, userPoolClient) {
+  private createRuntimeAgent(name: string, assetPath: string, config: AgentConfig, extraVars: EnvVars, userPool?: UserPool, userPoolClient?: UserPoolClient) {
 
     const newAgentArtifact = agentcore.AgentRuntimeArtifact.fromAsset(
       path.join(__dirname, assetPath)
