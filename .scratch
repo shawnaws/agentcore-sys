@@ -1,29 +1,14 @@
 # Changelog Notes
 
 ## 2025-10-29 ~14:30
-**File**: `infra/lib/agent-core-development.ts`
-**Change**: Fixed TypeScript type annotation for `userPoolClient` parameter in `createRuntimeAgent` method
-- Added optional type annotation `UserPoolClient` to the `userPoolClient` parameter (was missing type)
-- Resolves TypeScript hint about implicit 'any' type
-- Maintains consistency with other optional parameters like `userPool?: UserPool`
+**File:** src/agent005/main.py
+**Type:** Complete rewrite
+**Changes:**
+- Replaced FastMCP-only implementation with BedrockAgentCoreApp integration
+- Added proper BedrockModel initialization with boto3 session (us-west-2)
+- Implemented getNFLSchedule MCP tool with natural language query support
+- Added comprehensive SYSTEM_PROMPT with ESPN API formatting guidelines
+- Configured app to run on 0.0.0.0:8080 with MCP server integration
+- Changed from standalone MCP server to full AgentCore runtime agent
+- Added http_request tool capability for ESPN API integration
 
-## 2025-10-29 ~14:35
-**File**: `infra/bin/infra.ts`
-**Change**: Added agent003 and agent004 to CDK infrastructure configuration
-- Added MCP server URL environment variables to agent001 for agent002, agent003, and agent004
-- Registered agent003 (NFL Teams MCP Server) with protocol "MCP" and source path `../../src/agent003`
-- Registered agent004 (NFL Scores MCP Server) with protocol "MCP" and source path `../../src/agent004`
-- Enables agent001 to connect to the new NFL-focused MCP servers via the AgentCore Gateway
-- Completes Task 6 from the NFL agent expansion spec (infrastructure configuration)
-
-## 2025-10-29 ~14:37
-**File**: `infra/bin/infra.ts`
-**Change**: File saved with no modifications (empty diff)
-- No actual code changes detected
-- Likely a save operation to trigger build/watch processes
-
-## 2025-10-29 ~14:38
-**File**: `infra/package.json`
-**Change**: File saved with no modifications (empty diff)
-- No actual code changes detected
-- Likely a save operation to trigger build/watch processes or IDE auto-save

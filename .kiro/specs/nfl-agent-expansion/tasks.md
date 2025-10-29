@@ -7,7 +7,7 @@
   - Configure boto3 session and Bedrock model initialization
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 2. Create NFL Schedule MCP Server (agent005)
+- [x] 2. Create NFL Schedule MCP Server (agent005)
   - Create agent005 directory structure with main.py, Dockerfile, and requirements.txt
   - Implement getNFLSchedule tool using FastMCP framework with ESPN API integration
   - Add system prompt for schedule formatting with date/time and venue information
