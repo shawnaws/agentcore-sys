@@ -1,0 +1,6 @@
+refactor: clean up agent configurations in infra
+
+• Removed agent002 configuration from agentConfigs array
+• Streamlined infrastructure to single agent (agent001) setup
+• Cleaned up unused agent configuration blocks
+• Simplified deployment configuration management

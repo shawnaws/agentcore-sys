@@ -1,0 +1,107 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Weather Agent API",
+    "description": "Weather information agent. Provides weather forecasts and current conditions via text prompts.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A376998848592%3Aruntime%2Fagent002-G8mYJT9bzC/invocations?qualifier=DEFAULT"
+    }
+  ],
+  "paths": {
+    "/invocations": {
+      "post": {
+        "summary": "Invoke the weather agent with a text prompt",
+        "description": "Processes weather-related queries and returns forecasts, current conditions, or weather insights.",
+        "operationId": "invokeWeatherAgent",
+        "parameters": [
+          {
+            "name": "qualifier",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "DEFAULT"
+            },
+            "description": "qualifier"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "description": "Weather query or location-based prompt",
+                    "example": "What's the weather like in Seattle today?"
+                  }
+                },
+                "required": ["prompt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Streaming weather response from the agent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Array of weather response chunks",
+                  "example": [
+                    "The current weather in Seattle is partly cloudy with a temperature of 18°C (64°F).",
+                    "Humidity is at 65% with light winds from the northwest at 12 km/h.",
+                    "The forecast shows a chance of rain this evening with temperatures dropping to 12°C (54°F)."
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request (missing or malformed prompt)"
+          },
+          "500": {
+            "description": "Internal agent error or weather service unavailable"
+          }
+        }
+      }
+    },
+    "/ping": {
+      "get": {
+        "summary": "Health check endpoint for weather agent",
+        "description": "Returns weather agent health status for liveness probes",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Weather agent is healthy and ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    },
+                    "service": {
+                      "type": "string",
+                      "example": "weather-agent"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

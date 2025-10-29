@@ -1,5 +1,391 @@
 # Changelog Notes
 
+## 2025-10-27 (Monday)
+
+### infra/lib/agent-core-development.ts
+**Timestamp:** Just now (latest)
+**Change:** File saved with no content changes
+**Details:** 
+- Save event triggered but diff shows no actual modifications to file content
+- File remains unchanged from previous version
+- Likely a manual save or auto-save without edits
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Removed unused Agent initialization
+**Details:** 
+- Deleted 3 lines of dead code (lines 38-40)
+- Removed `print("Initializing agent")` statement
+- Removed `agent = Agent(model=model)` initialization
+- This agent instance was never used and 'model' variable was undefined
+- Cleaned up code that would have caused NameError at runtime
+- File now only contains the MCP server setup without unused agent initialization
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Fixed typo in tool description
+**Details:** 
+- Corrected spelling error in @mcp.tool decorator description (line 34)
+- Changed from: "Weather tool which can return the weatyher"
+- Changed to: "Weather tool which can return the weather"
+- Simple typo fix improving code documentation quality
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Enabled stateless HTTP mode for FastMCP server
+**Details:** 
+- Added `stateless_http=True` parameter to FastMCP initialization (line 23)
+- Changed from: `mcp = FastMCP("Weather Server")`
+- Changed to: `mcp = FastMCP("Weather Server", stateless_http=True)`
+- This configures the MCP server to operate in stateless HTTP mode, suitable for serverless/containerized deployments
+- Aligns with the "streamable-http" transport configured in mcp.run()
+- Note: The diff shows `stateless_http=true` (lowercase) but the actual file has `stateless_http=True` (Python boolean)
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** File saved with no content changes
+**Details:** 
+- Save event triggered but diff shows no actual modifications to file content
+- File remains unchanged from previous version
+- Likely a manual save or auto-save without edits
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Removed commented-out MCP transport function
+**Details:** 
+- Deleted the commented `_create_streamable_http_transport()` function (8 lines removed)
+- Function was previously commented out and unused
+- Cleaned up dead code that was kept for reference
+- File now has cleaner structure without the unused transport helper
+- This simplifies the codebase by removing code that was already non-functional
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Fixed getWeatherByZip tool implementation to properly invoke weather agent
+**Details:** 
+- Replaced buggy `return x + y` (undefined variables) with proper agent invocation
+- Now creates weather tools array and Agent instance with BedrockModel
+- Calls agent with prompt parameter to get weather information
+- Lines 36-40: Creates tools list, initializes Agent with model, returns agent(prompt)
+- Note: Still has undefined 'prompt' variable - needs to be passed as parameter or derived from 'zip'
+- This partially fixes the implementation but requires additional work to connect zip code to prompt
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Fixed MCP transport parameter syntax
+**Details:** 
+- Changed transport parameter from "streamable_http" to "streamable-http" (underscore to hyphen)
+- Corrects the transport type to match MCP protocol specification
+- Line 39: `mcp.run(transport="streamable-http")`
+- This fixes a potential runtime error where the MCP server might not recognize the transport type with underscore
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Removed BedrockAgentCoreApp initialization
+**Details:** 
+- Removed `print("initializing bedrock agentcore app")` statement
+- Removed `app = BedrockAgentCoreApp()` initialization
+- Agent002 is now configured as an MCP server (FastMCP) rather than a Bedrock Agent Core HTTP app
+- This aligns with the protocol: "MCP" configuration in infra/bin/infra.ts
+- The MCP server (mcp.run) will handle the runtime lifecycle instead of BedrockAgentCoreApp
+- Note: The @app.entrypoint decorator at line 42 will now fail since 'app' is no longer defined
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Converted MCP server from calculator to weather tool with streamable HTTP transport
+**Details:** 
+- Renamed FastMCP server from "Calculator Server" to "Weather Server"
+- Renamed tool function from `calculator(x: int, y: int)` to `getWeatherByZip(zip)`
+- Updated tool description from "Calculator tool which performs calculations" to "Weather tool which can return the weatyher" (typo: "weatyher")
+- Changed transport from "sse" (Server-Sent Events) to "streamable_http"
+- Note: Function implementation still returns `x + y` which doesn't match the new function signature (bug: `x` and `y` are undefined)
+- This aligns agent002's MCP server with weather functionality but has implementation errors that need fixing
+
+### src/agent002/main.py
+**Timestamp:** Earlier today
+**Change:** Added FastMCP server with calculator tool
+**Details:** 
+- Added import for `FastMCP` from mcp.server package
+- Created FastMCP server instance named "Calculator Server"
+- Defined calculator tool function with @mcp.tool decorator
+  - Takes two integers (x, y) as parameters
+  - Returns their sum
+  - Includes description: "Calculator tool which performs calculations"
+- Added mcp.run(transport="sse") to start server with SSE (Server-Sent Events) transport
+- This sets up agent002 as an MCP server that exposes a calculator tool
+- Note: mcp.run() is blocking, which may affect the agent's invoke entrypoint execution flow
+
+### infra/bin/infra.ts
+**Timestamp:** Just now (latest)
+**Change:** Added MCP protocol configuration to agent002
+**Details:** 
+- Added `protocol: "MCP"` property to agent002 configuration (line 29)
+- This configures agent002 to use the MCP (Model Context Protocol) instead of the default HTTP protocol
+- Aligns with the protocol validation logic in agent-core-development.ts that handles MCP vs HTTP protocol types
+- Agent002 will now be deployed as an MCP-based agent runtime
+
+### infra/lib/agent-core-development.ts
+**Timestamp:** Just now (latest)
+**Change:** Enhanced protocol validation with explicit error handling in createRuntimeAgent method
+**Details:** 
+- Improved protocol type selection logic with complete if-else-if chain
+- Added explicit else-if branch for HTTP protocol validation
+- Added error throwing for unknown protocol types with descriptive message
+- Cleaned up whitespace formatting in conditional blocks
+- Protocol validation now handles three cases:
+  1. MCP protocol (case-insensitive) → sets ProtocolType.MCP
+  2. HTTP protocol (case-insensitive) → sets ProtocolType.HTTP
+  3. Unknown protocol → throws Error with protocol name
+- This provides better error messages and prevents silent failures from unsupported protocol configurations
+
+### infra/bin/infra.ts
+**Timestamp:** Just now (latest)
+**Change:** Added duplicate agent002 configuration to agentConfigs array
+**Details:** 
+- Added second agent002 entry with sourcePath '../../src/agent002' and USEGATEWAY environment variable set to "true"
+- This creates a duplicate configuration - agent002 now appears twice in the agentConfigs array (lines 16-22 and lines 25-31)
+- Both entries have identical configuration
+- This will likely cause deployment issues due to duplicate agent names
+
+### src/agent001/main.py
+**Timestamp:** Just now (latest)
+**Change:** Re-added commented-out MCP transport function
+**Details:** 
+- Restored the `_create_streamable_http_transport()` function as commented code (lines 22-30)
+- Function includes gateway URL retrieval, access token handling, and authorization header setup
+- Kept as reference implementation for future MCP gateway integration
+- Function remains unused but preserved for documentation purposes
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Switched from MCP client tools to direct weather tool usage
+**Details:** 
+- Commented out `_create_streamable_http_transport()` function (lines 23-28)
+- Changed tools from `mcp_client.list_tools_sync()` to `[weather]` in invoke function
+- This switches agent002 from using MCP gateway tools to using the direct weather tool import
+- Aligns with the weather-specific agent configuration
+- MCP transport function preserved as commented code for reference
+
+### src/openapi/nationalweatherservice.json
+**Timestamp:** Just now (latest)
+**Change:** Filtered API to only include weather forecast endpoints
+**Details:** 
+- Reduced from 6398 lines to 1450 lines (77% reduction)
+- Kept only 4 essential forecast endpoints:
+  - /points/{latitude},{longitude} - Get forecast office and grid for a location
+  - /gridpoints/{wfo}/{x},{y}/forecast - Get 12-hour forecast periods
+  - /gridpoints/{wfo}/{x},{y}/forecast/hourly - Get hourly forecast
+  - /gridpoints/{wfo}/{x},{y} - Get raw gridpoint data
+- Removed all non-forecast endpoints: alerts, aviation, stations, offices, radar, products, zones, icons
+- Automatically filtered to 29 schemas, 7 parameters, 3 responses
+- Updated API title to "weather.gov API - Forecast Only"
+- Created backup: nationalweatherservice-full.json
+
+### infra/filter-forecast-only.ts
+**Timestamp:** Earlier today
+**Change:** Created new OpenAPI filtering utility for forecast-only endpoints
+**Details:** 
+- Created comprehensive script to filter National Weather Service API to forecast-only endpoints
+- Keeps only 4 forecast-related paths: /points/{latitude},{longitude}, /gridpoints/{wfo}/{x},{y}/forecast, /gridpoints/{wfo}/{x},{y}/forecast/hourly, /gridpoints/{wfo}/{x},{y}
+- Implements recursive reference collection to identify all used schemas, parameters, responses, and headers
+- Recursively traverses schema references to ensure all dependencies are included
+- Filters components to only include used schemas, parameters, and necessary responses (Error, Gridpoint12hForecast, GridpointHourlyForecast)
+- Updates API metadata: title to "weather.gov API - Forecast Only", description to "Simplified weather.gov API with only forecast endpoints"
+- Outputs filtered spec to './src/openapi/nationalweatherservice-forecast-only.json'
+- Includes console logging showing count of kept paths, schemas, and parameters
+- Total: 114 lines of TypeScript code
+- This provides a minimal, focused API spec for weather forecast functionality only
+
+### src/openapi/nationalweatherservice.json
+**Timestamp:** Just now (latest)
+**Change:** Flattened all anyOf, allOf, and oneOf schema constructs
+**Details:** 
+- Successfully removed all 40 instances of anyOf, allOf, and oneOf from the OpenAPI specification
+- Used automated flattening script (flatten-openapi.ts) to process the entire document
+- allOf schemas were merged by combining all properties and required arrays
+- oneOf and anyOf schemas were simplified by taking the first option
+- Flattened schemas in:
+  - components.schemas (all schema definitions)
+  - components.parameters (parameter definitions)
+  - All path operations (get, post, put, patch, delete, options, head)
+  - Nested schema properties within parameters
+  - Content-type-specific schemas in request/response bodies
+- Created backup file: nationalweatherservice-backup.json
+- Verification: grep confirms 0 instances of anyOf/allOf/oneOf remain
+- This makes the OpenAPI spec compatible with tools that don't support schema composition
+
+## 2025-10-27 (Monday)
+
+### infra/flatten-openapi.ts
+**Timestamp:** Just now (latest)
+**Change:** Enhanced flattenSchema function to handle nested schema properties and content types
+**Details:** 
+- Added flattening for nested schema property (lines 81-84) - common in parameter definitions
+- Added flattening for content types (lines 86-95) - handles response/request body schemas
+- Iterates through all content types (e.g., application/json, application/xml)
+- Recursively flattens schema within each content type definition
+- This enhancement ensures parameters with nested schemas and content-type-specific schemas are properly flattened
+- Complements existing allOf/oneOf/anyOf flattening and properties/items/additionalProperties handling
+
+### infra/flatten-openapi.ts
+**Timestamp:** Earlier today
+**Change:** Added comprehensive path-level schema flattening for all OpenAPI operations
+**Details:** 
+- Added new code block (lines 102-136) to flatten schemas in all path operations
+- Iterates through all paths in openApi.paths object
+- Flattens path-level parameters (shared across all operations in a path)
+- Flattens operation-level schemas for all HTTP methods (get, post, put, patch, delete, options, head)
+- For each operation, flattens:
+  - Parameters array (query, path, header params)
+  - Request body schemas
+  - Response schemas for all status codes
+- Uses existing flattenSchema() function to recursively process nested schemas
+- This ensures all schemas throughout the API spec are flattened, not just components.schemas and components.parameters
+- Completes the comprehensive flattening approach for the entire OpenAPI document
+
+### infra/flatten-openapi.ts
+**Timestamp:** Earlier today
+**Change:** Fixed file path for OpenAPI input file
+**Details:** 
+- Changed openApiPath from '../src/openapi/nationalweatherservice.json' to './src/openapi/nationalweatherservice.json'
+- Corrected relative path to work from infra directory context
+- This aligns with the project structure where infra scripts should reference src directory at parent level
+- File now uses correct path: './src/openapi/nationalweatherservice.json' instead of '../src/openapi/nationalweatherservice.json'
+
+### infra/flatten-openapi.ts
+**Timestamp:** Earlier today
+**Change:** Created new OpenAPI schema flattening utility
+**Details:** 
+- Created comprehensive schema flattening tool to resolve allOf, oneOf, and anyOf constructs
+- Implements recursive schema traversal with circular reference protection using visited Set
+- Handles allOf by merging all sub-schemas, combining properties and required arrays
+- Handles oneOf and anyOf by taking first option (simplified approach)
+- Recursively processes nested schemas in properties, items, and additionalProperties
+- Flattens all schemas in components.schemas section
+- Flattens all parameters in components.parameters section
+- Outputs to '../src/openapi/nationalweatherservice-flattened.json'
+- Includes console logging for completion confirmation
+- This provides an alternative to dereference.ts for handling complex OpenAPI schema constructs
+- Total: 108 lines of TypeScript code
+
+### infra/package.json
+**Timestamp:** Just now (latest)
+**Change:** Fixed JSON syntax error in dependencies
+**Details:** 
+- Added missing comma after 'dereference-json-schema' dependency entry
+- Fixed malformed JSON that was causing parse errors
+- File now has valid JSON syntax with properly formatted dependencies object
+- This resolves the "Colon expected" error that was preventing package installation
+
+### infra/dereference.ts
+**Timestamp:** Just now (latest)
+**Change:** File saved with no content changes
+**Details:** 
+- Save event triggered but diff shows no actual modifications to file content
+- File remains unchanged from previous version
+- Likely a manual save or auto-save without edits
+
+### infra/dereference.ts
+**Timestamp:** Earlier today
+**Change:** Re-added schemaWithRefs variable assignment
+**Details:** 
+- Restored the `const schemaWithRefs = fs.readFileSync(...)` line that was accidentally removed
+- Fixed the "Cannot find name 'schemaWithRefs'" error
+- File now properly reads the National Weather Service OpenAPI spec file before dereferencing
+- Note: 'schemaWithNoRefs' variable is still unused (no output/write operation yet)
+
+### infra/dereference.ts
+**Timestamp:** Earlier today
+**Change:** Fixed variable assignment for schema parsing
+**Details:** 
+- Properly assigned fs.readFileSync result to `schemaWithRefs` constant with JSON.parse
+- Resolved the undefined variable error from previous version
+- File now correctly reads and parses the National Weather Service OpenAPI spec before dereferencing
+- Still missing 'dereference-json-schema' package dependency (needs npm install)
+- Ready to dereference OpenAPI schema once dependency is installed
+
+### infra/dereference.ts
+**Timestamp:** Earlier today
+**Change:** Added file read operation and fixed import syntax
+**Details:** 
+- Changed fs import to namespace import: `import * as fs from 'fs'`
+- Added fs.readFileSync call to read '../src/openapi/nationalweatherservice.json'
+- File still has compilation errors: 'schemaWithRefs' is undefined, readFileSync result not assigned
+- Missing 'dereference-json-schema' package dependency
+- This appears to be work-in-progress for dereferencing the National Weather Service OpenAPI spec
+
+### infra/dereference.ts
+**Timestamp:** Earlier today
+**Change:** Fixed fs import statement syntax
+**Details:** 
+- Corrected import from `import * from fs` to `import fs from 'fs'`
+- Changed from namespace import to default import
+- File still has remaining issues: undefined 'schemaWithRefs' variable and unused imports
+- This is a partial fix addressing the import syntax error
+
+### infra/dereference.ts
+**Timestamp:** Earlier today
+**Change:** Added incomplete fs import statement (syntax error)
+**Details:** 
+- Added malformed import statement: `import * from fs` (missing 'as' keyword)
+- This creates a syntax error - should be `import * as fs from 'fs'`
+- File still references undefined variable 'schemaWithRefs'
+- Multiple compilation errors present in the file
+
+### infra/dereference.js
+**Timestamp:** Earlier today
+**Change:** Removed example schema code, keeping only the dereferencing logic
+**Details:** 
+- Removed the hardcoded example schema object (Person/Name schema with $ref)
+- Kept only the import statement and dereferenceSync function call
+- File now expects schemaWithRefs to be provided externally
+- This makes the utility more generic and reusable for any schema input
+
+### infra/dereference.js
+**Timestamp:** Earlier today
+**Change:** Created new file with JSON schema dereferencing utility
+**Details:** 
+- Added import for 'dereference-json-schema' library
+- Created example schema with $ref references (Person schema referencing Name schema)
+- Implemented dereferenceSync call to resolve schema references
+- This utility can be used to flatten OpenAPI schemas by resolving all $ref pointers
+
+### src/openapi/nationalweatherservice.json
+**Timestamp:** Latest update
+**Change:** Restored comprehensive National Weather Service API specification
+**Details:** 
+- Added back all alert-related endpoints (/alerts, /alerts/active, /alerts/types, /alerts/{id}, etc.)
+- Added back all aviation endpoints (/aviation/cwsus, /aviation/sigmets with ATSU and date parameters)
+- Added back all gridpoint forecast endpoints (/gridpoints/{wfo}/{x},{y}, /forecast, /forecast/hourly, /stations)
+- Added back all station/observation endpoints (/stations, /stations/{stationId}/observations, /observations/latest)
+- Added back all office endpoints (/offices/{officeId}, /headlines)
+- Added back all point endpoints (/points/{latitude},{longitude}, /stations)
+- Added back all radar endpoints (/radar/servers, /radar/stations, /radar/queues, /radar/profilers)
+- Added back all product endpoints (/products, /products/types, /products/locations with full query support)
+- Added back satellite thumbnail endpoint (/thumbnails/satellite/{area})
+- Added back TAF (Terminal Aerodrome Forecast) endpoints
+- Restored extensive schema definitions including Alert, AlertCollection, Gridpoint, Point, Observation, Sigmet, METAR-related schemas, ProblemDetail (RFC 7807), GeoJSON schemas
+- Expanded file from ~1000 lines to 4898 lines (full API specification)
+- This restores the complete weather.gov API v2.6.0 specification for comprehensive weather data access
+
+### src/openapi/nationalweatherservice.json
+**Timestamp:** Earlier today
+**Change:** Significantly reduced API specification by removing most endpoints and schemas
+**Details:** 
+- Removed all alert-related endpoints (/alerts, /alerts/active, /alerts/types, etc.)
+- Removed all aviation endpoints (/aviation/cwsus, /aviation/sigmets)
+- Removed all gridpoint forecast endpoints (/gridpoints/{wfo}/{x},{y})
+- Removed all station/observation endpoints (/stations, /stations/{stationId}/observations)
+- Removed all office endpoints (/offices/{officeId})
+- Removed all point endpoints (/points/{latitude},{longitude})
+- Removed all radar endpoints (/radar/servers, /radar/stations, /radar/queues, /radar/profilers)
+- Removed all product endpoints (/products, /products/types, /products/locations)
+- Removed satellite thumbnail endpoint (/thumbnails/satellite/{area})
+- Kept only: /glossary, /icons (deprecated), and /zones endpoints
+- Removed extensive schema definitions including Alert, Gridpoint, Point, Observation, Sigmet, METAR-related schemas
+- Reduced file from 2052 lines to approximately 1000 lines
+- This appears to be a simplification to focus on core zone/glossary functionality only
+
 ## 2025-10-24 (Friday)
 
 ### infra/bin/infra.ts
@@ -32,3 +418,396 @@
 - The file was modified but the diff shows no visible content changes
 - File appears to have been saved without substantive modifications
 - Content remains: "*** Testing git Hooks"
+
+### src/openapi/nationalweatherservice-flattened.json
+**Timestamp:** Just now (latest)
+**Change:** File saved with no content changes
+**Details:** 
+- Save event triggered but diff shows no actual modifications to file content
+- File remains unchanged from previous version
+- Likely a manual save or auto-save without edits
+
+### infra/dereference.ts
+**Timestamp:** 2025-10-27 (Monday) - Latest
+**Change:** Updated to process forecast-only OpenAPI spec and output dereferenced version
+**Details:** 
+- Changed input file from '../src/openapi/nationalweatherservice.json' to '../src/openapi/nationalweatherservice-forecast-only.json'
+- Changed output file from '../src/openapi/nationalweatherservice-dereferenced.json' to '../src/openapi/nationalweatherservice-forecast-only-deref.json'
+- Now processes the simplified forecast-only API spec (1450 lines) instead of the full API (6398 lines)
+- Will generate a fully dereferenced version with all $ref pointers resolved inline
+- This creates a self-contained OpenAPI spec with no external references, suitable for tools that don't support $ref
+- Aligns with the forecast-only filtering work done in filter-forecast-only.ts
+
+### infra/lib/agent-core-development.ts
+**Timestamp:** 2025-10-27 (Monday) - Latest
+**Change:** Removed unused imports
+**Details:** 
+- Removed unused import: BedrockAgentCoreRuntimeAgent from 'bedrock-agentcore-cdk-constructs'
+- Removed unused import: notEqual from 'assert'
+- Removed unused import: open from 'fs'
+- Cleaned up 3 unused imports that were causing linter warnings
+- Kept necessary imports: Repository (aws-ecr), bedrock (aws-bedrock-alpha), AnyPrincipal (aws-iam)
+- This resolves the "declared but never read" warnings for these imports
+
+### src/openapi/nationalweatherservice-forecast-only.json
+**Timestamp:** 2025-10-27 (Monday) - Latest
+**Change:** Removed security scheme and security requirements
+**Details:** 
+- Removed securitySchemes section from components (lines 1432-1440)
+  - Deleted userAgent API key security scheme definition
+  - This scheme required User-Agent header for all API requests
+- Removed global security array (lines 1442-1446)
+  - Deleted security requirement that enforced userAgent scheme on all endpoints
+- Rationale: Security will be handled by AWS Bedrock Agent Core Gateway credential provider instead
+- The API key will be injected via gateway configuration (providerArn and secretArn in CDK stack)
+- This simplifies the OpenAPI spec and delegates authentication to the gateway layer
+- File reduced by 13 lines (from 1442 to 1429 lines)
+
+### src/openapi/weather-agent.json
+**Timestamp:** 2025-10-27 (Monday) - Latest
+**Change:** Created new weather agent OpenAPI specification
+**Details:** 
+- Created complete OpenAPI 3.0.0 specification for a weather agent API
+- Defined server URL pointing to Bedrock Agent Core runtime endpoint
+- Added POST /invocations endpoint:
+  - Accepts weather queries via "prompt" field in request body
+  - Returns streaming array of weather response chunks
+  - Includes qualifier query parameter (default: "DEFAULT")
+  - Supports 200 (success), 400 (bad request), 500 (error) responses
+- Added GET /ping health check endpoint:
+  - Returns service health status
+  - Provides service name identification
+- Total: 107 lines
+- This spec defines an agent that processes natural language weather queries and returns forecasts/conditions
+
+### src/agent001/main.py
+**Timestamp:** 2025-10-27 (Monday) - Latest
+**Change:** File saved with no content changes
+**Details:** 
+- Save event triggered but diff shows no actual modifications to file content
+- File remains unchanged from previous version
+- Likely a manual save or auto-save without edits
+
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Switched to http_request tool and added comprehensive weather system prompt
+**Details:** 
+- Added WEATHER_SYSTEM_PROMPT constant (21 lines) with detailed instructions for weather assistant
+  - Guides agent to use National Weather Service API endpoints
+  - Provides workflow: get coordinates from /points endpoint, then fetch forecast
+  - Includes formatting guidelines for human-readable weather data
+- Created unused weather_agent instance with http_request tool (lines 32-35)
+  - Note: This agent instance is defined but never used in the code
+- Updated getWeatherByZip function to use http_request tool instead of weather tool
+  - Changed tools from `[weather]` to `[http_request]`
+  - Added system_prompt parameter to Agent initialization
+- This shifts from using the strands weather tool to direct HTTP API calls via http_request
+- Note: http_request is not imported - will cause NameError at runtime
+- Note: 'prompt' variable still undefined in getWeatherByZip function
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** File saved with no content changes
+**Details:** 
+- Save event triggered but diff shows no actual modifications to file content
+- File remains unchanged from previous version
+- Likely a manual save or auto-save without edits
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** File saved with no content changes
+**Details:** 
+- Save event triggered but diff shows no actual modifications to file content
+- File remains unchanged from previous version
+- Likely a manual save or auto-save without edits
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Simplified getWeather tool function signature
+**Details:** 
+- Removed 'zip' parameter from getWeather function (previously getWeatherByZip)
+- Removed return type annotation '-> int' (was incorrect for agent response)
+- Function now takes no parameters: `def getWeather():`
+- Note: Function still references undefined 'prompt' variable on line 56 - needs to be passed as parameter or defined
+- This aligns the function signature with the MCP tool pattern but leaves the prompt variable issue unresolved
+
+
+### src/openapi/weather-agent.json
+**Timestamp:** Just now (latest)
+**Change:** Updated server URL to point to correct agent002 runtime endpoint
+**Details:** 
+- Changed server URL from placeholder (us-east-1, account 123456789012, XXXXXXX) to actual agent002 runtime
+- New URL: https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A376998848592%3Aruntime%2Fagent002-G8mYJT9bzC%2Fruntime-endpoint%2FDEFAULT
+- Updated region from us-east-1 to us-west-2
+- Updated account ID to 376998848592
+- Updated runtime identifier to agent002-G8mYJT9bzC with DEFAULT endpoint
+- This aligns the OpenAPI spec with the actual deployed agent002 runtime for gateway integration
+
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Removed stateless_http parameter from FastMCP initialization
+**Details:** 
+- Changed from: `mcp = FastMCP("Weather Server", stateless_http=True)`
+- Changed to: `mcp = FastMCP("Weather Server")`
+- Removed the stateless_http=True configuration parameter
+- FastMCP will now use default HTTP mode instead of explicit stateless mode
+- This may affect how the MCP server handles state between requests
+
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Re-enabled stateless HTTP mode for FastMCP server
+**Details:** 
+- Added back `stateless_http=True` parameter to FastMCP initialization (line 39)
+- Changed from: `mcp = FastMCP("Weather Server")`
+- Changed to: `mcp = FastMCP("Weather Server", stateless_http=True)`
+- This re-enables stateless HTTP mode for the MCP server, suitable for containerized/serverless deployments
+- Aligns with the "streamable-http" transport configured in mcp.run()
+- Reverses the previous change that removed this parameter
+
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Removed stateless_http parameter from FastMCP initialization
+**Details:** 
+- Changed from: `mcp = FastMCP("Weather Server", stateless_http=True)`
+- Changed to: `mcp = FastMCP("Weather Server")`
+- Removed the stateless_http=True configuration parameter
+- FastMCP will now use default HTTP mode instead of explicit stateless mode
+- This may affect how the MCP server handles state between requests
+
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Simplified getWeather tool to return static response
+**Details:** 
+- Commented out Agent initialization with http_request tool and WEATHER_SYSTEM_PROMPT
+- Changed from dynamic weather agent invocation to simple static return: "The weather is nice today"
+- Removed runtime dependency on undefined 'prompt' variable (was causing errors)
+- Preserved commented code (lines 52-57) showing previous Agent-based implementation for reference
+- This creates a minimal working MCP tool for testing purposes
+- Function now executes without errors but provides no real weather functionality
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Added streamable HTTP path configuration to FastMCP server
+**Details:** 
+- Added `streamable_http_path="/mcp/"` parameter to FastMCP initialization (line 39)
+- Changed from: `mcp = FastMCP("Weather Server")`
+- Changed to: `mcp = FastMCP("Weather Server", streamable_http_path="/mcp/")`
+- This configures the MCP server to expose its streamable HTTP endpoint at the /mcp/ path
+- Aligns with Bedrock Agent Core's expected MCP endpoint routing
+- The path will be used for MCP protocol communication over HTTP transport
+
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Fixed syntax error in FastMCP streamable_http_path parameter
+**Details:** 
+- Corrected parameter assignment from `streamable_http_path=="/mcp/"` to `streamable_http_path="/mcp/"`
+- Removed erroneous double equals sign (==) that was causing a syntax error
+- Changed from comparison operator to proper assignment operator (=)
+- Line 39: `mcp = FastMCP("Weather Server", streamable_http_path="/mcp/")`
+- This fixes the "expected argument value expression" error that was preventing the file from running
+- The MCP server can now properly initialize with the streamable HTTP path configured
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Added return type annotation to getWeather function
+**Details:** 
+- Added `-> string` return type annotation to getWeather function (line 51)
+- Changed from: `def getWeather():`
+- Changed to: `def getWeather() -> string:`
+- Note: This will cause a NameError at runtime - Python uses `str` not `string` for the string type
+- Should be `-> str` instead of `-> string` for valid Python syntax
+- Function currently returns a hardcoded string: "The weather is nice today"
+
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Added string module import
+**Details:** 
+- Added `import string` at line 2
+- This import is currently unused in the code
+- May be intended for future string manipulation functionality in the weather tool
+- Note: The getWeather function returns a string type but doesn't use the string module
+
+### src/agent002/main.py
+**Timestamp:** Just now (latest)
+**Change:** Removed invalid return type annotation from getWeather function
+**Details:** 
+- Removed `-> string` return type annotation from getWeather function (line 52)
+- Changed from: `def getWeather() -> string:`
+- Changed to: `def getWeather():`
+- Note: Python uses `str` not `string` for type hints, so this was invalid syntax
+- Function now has no return type annotation, which is valid Python
+- This fixes a potential NameError since 'string' is not a built-in Python type
+
+
+### src/agent002/calc.py
+**Timestamp:** 2025-10-27 (Monday) - Latest
+**Change:** File recreated with calculator MCP server implementation
+**Details:** 
+- Recreated calc.py file that was previously removed or empty
+- Implements FastMCP server named "Calculator Server"
+- Defines add() tool function with @mcp.tool decorator
+  - Takes two integers (x, y) as parameters
+  - Returns their sum as integer
+  - Includes description: "Add two numbers together"
+  - Includes docstring: "Add two numbers and return the result."
+- Runs MCP server with streamable-http transport
+- Total: 10 lines
+- This provides a simple calculator tool via MCP protocol, separate from the weather agent in main.py
+
+
+### src/agent002/calc.py
+**Timestamp:** 2025-10-27 (Monday) - Just now
+**Change:** Enabled stateless HTTP mode for calculator MCP server
+**Details:** 
+- Added `stateless_http=True` parameter to FastMCP initialization (line 3)
+- Changed from: `mcp = FastMCP("Calculator Server")`
+- Changed to: `mcp = FastMCP("Calculator Server", stateless_http=True)`
+- Configures the calculator MCP server to operate in stateless HTTP mode
+- Suitable for containerized/serverless deployments where state persistence isn't required
+- Aligns with the stateless configuration pattern used in main.py
+
+
+### src/agent002/calc.py
+**Timestamp:** 2025-10-27 (Monday) - Just now
+**Change:** Removed stateless_http parameter from FastMCP initialization
+**Details:** 
+- Changed from: `mcp = FastMCP("Calculator Server", stateless_http=True)`
+- Changed to: `mcp = FastMCP("Calculator Server")`
+- Removed the stateless_http=True configuration parameter
+- FastMCP will now use default HTTP mode instead of explicit stateless mode
+- This may affect how the MCP server handles state between requests in the calculator tool
+
+
+### src/agent002/calc.py
+**Timestamp:** Just now (latest)
+**Change:** File saved with no content changes
+**Details:** 
+- Save event triggered but diff shows no actual modifications to file content
+- File remains unchanged from previous version
+- Likely a manual save or auto-save without edits
+
+
+### src/agent002/calc.py
+**Timestamp:** 2025-10-27 (Monday) - Just now
+**Change:** Added DEBUG log level to FastMCP server initialization
+**Details:** 
+- Changed from: `mcp = FastMCP("Calculator Server")`
+- Changed to: `mcp = FastMCP("Calculator Server", log_level=DEBUG)`
+- Added log_level parameter set to DEBUG for verbose logging
+- Note: DEBUG is not imported - will cause NameError at runtime (needs `from logging import DEBUG` or similar)
+- This enables debug-level logging for the MCP calculator server to help with troubleshooting
+
+
+### src/agent002/calc.py
+**Timestamp:** 2025-10-27 (Monday) - Latest
+**Change:** Fixed FastMCP import path
+**Details:** 
+- Changed import from `from mcp.server import FastMCP` to `from mcp.server.fastmcp import FastMCP`
+- Corrected the module path to match the actual package structure
+- This fixes an ImportError that would occur when trying to run the calculator server
+- Aligns with the correct mcp package structure where FastMCP is in the fastmcp submodule
+
+### src/agent002/client.py
+**Timestamp:** 2025-10-27 (Monday) - Latest
+**Change:** File recreated with MCP client implementation
+**Details:** 
+- Restored complete MCP client implementation (16 lines)
+- Imports: streamablehttp_client, Agent, MCPClient
+- Defines create_streamable_http_transport() function pointing to http://localhost:8000/mcp/
+- Creates streamable_http_mcp_client instance using MCPClient with transport factory
+- Implements context manager pattern to use MCP server
+- Retrieves tools from MCP server using list_tools_sync()
+- Creates Agent instance with MCP tools
+- This provides a working example of how to connect to the agent002 MCP server as a client
+- Note: Missing newline at end of file
+
+
+### src/agent003/main.py
+**Timestamp:** 2025-10-29 (Wednesday) - Latest
+**Change:** Created new NFL information agent with ESPN API integration
+**Details:** 
+- Created complete agent003 implementation (62 lines)
+- Initialized BedrockAgentCoreApp for Bedrock Agent Core runtime
+- Configured to use Claude Sonnet 4.5 model (global.anthropic.claude-sonnet-4-5-20250929-v1:0)
+- Added ESPN_NFL_SYSTEM_PROMPT with comprehensive instructions for NFL assistant:
+  - Guides agent to use ESPN NFL Teams API (https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams)
+  - Provides instructions for retrieving team information, records, logos, and venue details
+  - Includes formatting guidelines for human-readable NFL data presentation
+- Configured boto3 session for us-west-2 region
+- Implemented _get_bedrock_model() helper function with streaming enabled
+- Created @app.entrypoint invoke() function:
+  - Accepts "prompt" parameter from payload
+  - Creates Agent with ESPN system prompt, Bedrock model, and http_request tool
+  - Returns agent response for NFL team information queries
+- Includes __main__ block to run app.run() for local testing
+- This agent specializes in NFL team information retrieval via ESPN's public API
+
+
+### src/agent003/main.py
+**Timestamp:** 2025-10-29 (Wednesday) - Latest
+**Change:** Converted from BedrockAgentCoreApp to FastMCP server with NFL team lookup tool
+**Details:** 
+- Removed BedrockAgentCoreApp import and initialization
+- Added FastMCP import and created MCP server instance with stateless HTTP mode
+- Converted @app.entrypoint invoke function to @mcp.tool decorator
+- Renamed function from `invoke(payload)` to `getNFLTeams(teamQuery: str)`
+- Changed from processing payload dict to accepting direct string query parameter
+- Updated function signature with proper type hints and docstring
+- Changed from `payload.get("prompt", ...)` to direct `teamQuery` parameter
+- Modified agent invocation from `agent(user_message)` to `agent(teamQuery)`
+- Changed runtime from `app.run()` to `mcp.run(transport="streamable-http")`
+- This aligns agent003 with the MCP protocol pattern used in agent002
+- Agent003 now exposes getNFLTeams as an MCP tool for ESPN NFL API queries
+- Maintains ESPN_NFL_SYSTEM_PROMPT and http_request tool integration
+
+
+### src/agent002/main.py
+**Timestamp:** 2025-10-29 (Wednesday) - Latest
+**Change:** Added invalid JavaScript/TypeScript import and undefined AWSCognitoProvider initialization (syntax errors)
+**Details:** 
+- Added invalid import statement: `import * as streamablesigv4 from '../utils/streamable_http_sigv4'` (line 11)
+  - This is JavaScript/TypeScript syntax, not valid Python
+  - Should use Python import syntax: `from utils.streamable_http_sigv4 import ...`
+  - Will cause SyntaxError at runtime
+- Added undefined AWSCognitoProvider initialization (lines 17-23)
+  - Creates auth_provider instance with Cognito configuration
+  - AWSCognitoProvider class is not imported or defined
+  - Will cause NameError at runtime
+  - Includes placeholder values: empty user_pool_id, "your-app-client-id", "your-app-client-secret"
+  - Configured for eu-central-1 region with localhost:8000 base URL
+- These additions appear to be incomplete/experimental code for authentication
+- File now has multiple critical syntax and runtime errors that prevent execution
+- The weather MCP server functionality remains intact but cannot run due to these errors
+
+
+### src/agent004/main.py
+**Timestamp:** 2025-10-29 (Wednesday) - Latest
+**Change:** Created new NFL Scores MCP Server (agent004) with ESPN Scoreboard API integration
+**Details:** 
+- Created complete agent004 implementation (94 lines) for NFL game scores
+- Initialized FastMCP server with stateless HTTP mode and host="0.0.0.0"
+- Configured boto3 session for us-west-2 region
+- Implemented _get_bedrock_model() helper function:
+  - Uses us.anthropic.claude-sonnet-4-20250514-v1:0 model
+  - Returns BedrockModel instance with session configuration
+- Created @mcp.tool getNFLScores(scoreQuery: str) function:
+  - Accepts natural language queries like "today's scores", "Cowboys game score", "week 5 scores"
+  - Includes comprehensive system prompt (47 lines) with ESPN API instructions:
+    - Guides agent to use ESPN NFL Scoreboard API (https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard)
+    - Provides query parameter guidance (dates=YYYYMMDD, week=N, seasontype=2)
+    - Includes detailed formatting guidelines with emoji indicators (🏈, 📍)
+    - Specifies error handling for API failures, empty results, and ambiguous queries
+  - Uses BedrockModel.generate() with http_request tool for API calls
+  - Returns formatted score information with teams, scores, status, and venue
+- Includes __main__ block with BedrockAgentCoreApp wrapper:
+  - Wraps FastMCP server in BedrockAgentCoreApp for AgentCore runtime deployment
+  - Runs app.run() for containerized execution
+- This completes Task 1 from the NFL agent expansion spec
+- Agent004 provides real-time and historical NFL game scores via MCP protocol

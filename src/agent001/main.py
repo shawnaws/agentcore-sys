@@ -19,16 +19,19 @@ session = boto3.Session(
 print("Initializing agent")
 agent = Agent(model=model)
 
-def _create_streamable_http_transport(headers=None):
-    url = {os.environ.get('GATEWAY_URL')}
-    return streamablehttp_client(
-        url,
-        headers=headers
-    )
+# def _create_streamable_http_transport(headers=None):
+#     url = {os.environ.get('GATEWAY_URL')}
+#     access_token = {AccessToken}
+#     headers = {**headers} if headers else {}
+#     headers["Authorization"] = f"Bearer {access_token}"
+#     return streamablehttp_client(
+#         url,
+#         headers=headers
+#     )
 
-def _get_bedrock_model(model_id):
+def _get_bedrock_model(m_id):
     return BedrockModel(
-        inference_profile_id=model_id,
+        inference_profile_id=m_id,
         temperature=0.0,
         streaming=True,
         boto_session=session
@@ -41,7 +44,7 @@ def invoke(payload):
     with mcp_client:
         tools = mcp_client.list_tools_sync()
         agent = Agent(
-            model=bedrock_model,
+            model=_get_bedrock_model(model_id),
             tools=tools
         )
         return agent(prompt)
