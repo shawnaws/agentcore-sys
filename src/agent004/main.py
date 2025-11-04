@@ -4,10 +4,45 @@ Provides real-time and historical NFL game scores via ESPN API
 """
 
 import boto3
+import json
+import logging
+import sys
+from datetime import datetime
 from strands import Agent
-from strands_tools import http_request
 from strands.models import BedrockModel
 from mcp.server.fastmcp import FastMCP
+
+# Import custom HTTP request with retry logic
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
+from http_request_with_retry import http_request_with_retry
+
+# Configure structured JSON logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create JSON formatter
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "level": record.levelname,
+            "agent": "agent004",
+            "message": record.getMessage(),
+        }
+        if hasattr(record, 'tool'):
+            log_data['tool'] = record.tool
+        if hasattr(record, 'query'):
+            log_data['query'] = record.query
+        if hasattr(record, 'error'):
+            log_data['error'] = record.error
+        if hasattr(record, 'retry_count'):
+            log_data['retry_count'] = record.retry_count
+        return json.dumps(log_data)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(JSONFormatter())
+logger.addHandler(handler)
 
 model_id = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
@@ -22,35 +57,49 @@ Your capabilities:
 4. Filter scores by team name
 
 Instructions:
-- Use the http_request tool to call the ESPN API
-- Parse the JSON response to extract game information from the 'events' array
-- Format scores clearly with team names, scores, and game status
-- For live games, show quarter and time remaining
-- For completed games, show "Final" status
-- Highlight the winning team in completed games
-- Include venue information when relevant
-- Include whether this was a Monday Night Football or Thursday Night Football event (outside the standard Sunday)
+- Use the http_request tool to call the ESPN API with a 30-second timeout
+- The system will automatically retry failed requests up to 2 times with exponential backoff (1s, 2s)
+- Parse the JSON response carefully, checking for expected fields before accessing them
+
+Formatting Standards (REQUIRED):
+1. **Date/Time**: Format as "Sunday, January 15, 2025 at 4:30 PM EST" (include day of week, full date, time with timezone)
+2. **Team Names**: Format as "Dallas Cowboys (DAL)" (full name with abbreviation in parentheses)
+3. **Matchups**: Use "@" for away @ home format: "Dallas Cowboys (DAL) @ Philadelphia Eagles (PHI)"
+4. **Game Status**: 
+   - Completed games: "Final" with winner highlighted using ✓
+   - Live games: "Live - 3rd Quarter, 8:42 remaining"
+   - Scheduled games: Show date/time
+5. **Score Display**: For completed games, show winner first with checkmark: "Final: PHI 31, DAL 24 ✓"
+6. **Venue**: Format as "📍 Lincoln Financial Field" or "📍 AT&T Stadium (Arlington, TX)"
+7. **Multiple Games**: Use clear separators and group by date or week
 
 Response Format:
 🏈 NFL Scores - [Date/Week]
 
-[Away Team] @ [Home Team]
-[Status]: [Away Score] - [Home Score]
+[Away Team (ABR)] @ [Home Team (ABR)]
+[Status with scores]
 📍 [Venue]
 
 Example:
 🏈 NFL Scores - Week 18
 
 Dallas Cowboys (DAL) @ Philadelphia Eagles (PHI)
-Final: PHI 31, DAL 24
+Final: PHI 31, DAL 24 ✓
 📍 Lincoln Financial Field
 
+Kansas City Chiefs (KC) vs Buffalo Bills (BUF)
+Live - 3rd Quarter, 8:42 remaining
+Current: KC 21, BUF 17
+📍 Arrowhead Stadium
+
 Error Handling:
-- If the API is unavailable, return: "NFL scores service is temporarily unavailable. Please try again in a moment."
+- If the API is unavailable after retries, return: "The NFL scores service is temporarily unavailable. Please try again in a moment."
+- If the request times out, return: "The NFL data service is taking too long to respond. Please try again."
 - If no games are found, return: "No NFL games found for the specified query."
+- If the API response is malformed or missing expected data, return: "I'm having trouble reading the NFL scores data right now. This has been logged for investigation."
 - If the query is ambiguous, make your best interpretation or ask for clarification.
 
-Always provide accurate and up-to-date NFL score information based on the API response.
+Always provide accurate and up-to-date NFL score information based on the API response with consistent formatting.
 """
 
 # Initialize boto3 session
@@ -74,7 +123,7 @@ def _get_bedrock_model(m_id):
 @mcp.tool(description="Retrieve NFL game scores for current, recent, or specific dates/weeks")
 def getNFLScores(scoreQuery: str) -> str:
     """
-    Retrieve NFL game scores from ESPN API.
+    Retrieve NFL game scores from ESPN API with error handling and retries.
     
     Args:
         scoreQuery: Natural language query like "today's scores", 
@@ -83,12 +132,28 @@ def getNFLScores(scoreQuery: str) -> str:
     Returns:
         Formatted score information with teams, scores, status, time
     """
-    agent = Agent(
-        system_prompt=ESPN_NFL_SCORES_SYSTEM_PROMPT,
-        model=_get_bedrock_model(model_id),
-        tools=[http_request]
-    )
-    return agent(scoreQuery)
+    logger.info("getNFLScores invoked", extra={"tool": "getNFLScores", "query": scoreQuery})
+    
+    try:
+        agent = Agent(
+            system_prompt=ESPN_NFL_SCORES_SYSTEM_PROMPT,
+            model=_get_bedrock_model(model_id),
+            tools=[http_request_with_retry]
+        )
+        result = agent(scoreQuery)
+        logger.info("getNFLScores completed successfully", extra={"tool": "getNFLScores"})
+        return result
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(
+            "getNFLScores failed",
+            extra={
+                "tool": "getNFLScores",
+                "query": scoreQuery,
+                "error": error_msg
+            }
+        )
+        return "I encountered an error while retrieving NFL scores. Please try again or rephrase your question."
 
 
 if __name__ == "__main__":

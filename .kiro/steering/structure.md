@@ -6,6 +6,7 @@
 .
 ├── src/                    # Agent implementations
 ├── infra/                  # AWS CDK infrastructure code
+├── Dockerfile.agentcore    # Shared Dockerfile for all agents
 ├── package.json            # Root dependencies (agentcore constructs)
 ├── README.md              # Project documentation
 └── .venv/                 # Python virtual environment
@@ -37,9 +38,10 @@ src/
 ### Agent Conventions
 
 - **main.py**: Contains the BedrockAgentCoreApp entrypoint and agent initialization
-- **Dockerfile**: Defines the container image for deployment
+- **Dockerfile**: Symlink to `../../Dockerfile.agentcore` (shared across all agents)
 - **requirements.txt**: Lists Python dependencies
 - Each agent is self-contained and independently deployable
+- All agents use the same Dockerfile for consistency and easier maintenance
 
 ## Infrastructure (`infra/`)
 

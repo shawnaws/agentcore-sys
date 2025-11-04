@@ -1,14 +1,1 @@
 # Changelog Notes
-
-## 2025-10-29 ~14:30
-**File:** src/agent005/main.py
-**Type:** Complete rewrite
-**Changes:**
-- Replaced FastMCP-only implementation with BedrockAgentCoreApp integration
-- Added proper BedrockModel initialization with boto3 session (us-west-2)
-- Implemented getNFLSchedule MCP tool with natural language query support
-- Added comprehensive SYSTEM_PROMPT with ESPN API formatting guidelines
-- Configured app to run on 0.0.0.0:8080 with MCP server integration
-- Changed from standalone MCP server to full AgentCore runtime agent
-- Added http_request tool capability for ESPN API integration
-
