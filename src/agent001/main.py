@@ -1,109 +1,165 @@
+import contextlib
 import os
+import sys
+import boto3
+import asyncio
+import dotenv
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from strands import Agent
 from strands.models import BedrockModel
 from strands.tools.mcp.mcp_client import MCPClient
-import boto3
+from strands_tools import current_time
+from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client
+from contextlib import asynccontextmanager
+
+
+# Add utils directory to Python path
+from remote_client import create_streamable_http_transport_sigv4
 
 print("Initializing bedrock agentcore app")
 app = BedrockAgentCoreApp()
 
+logger = app.logger
 model_id = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
+region="us-west-2"
+service = "bedrock-agentcore"
 # Create a custom boto3 session
 print("Initializing boto3 session")
 session = boto3.Session(
-    region_name='us-west-2',
+    region_name=region,
 )
+
+sts = boto3.client('sts')
+aws_account_id = sts.get_caller_identity()["Account"]
 
 def _get_bedrock_model(m_id):
     return BedrockModel(
-        inference_profile_id=m_id,
+        model_id=m_id,
         temperature=0.0,
         streaming=True,
         boto_session=session
     )
 
-def _initialize_mcp_clients():
-    """
-    Initialize MCP client connections for all MCP servers.
-    Returns a dictionary of client names to MCPClient instances.
-    Handles missing environment variables gracefully.
-    """
-    mcp_servers = {
-        'weather': os.environ.get('AGENT002_URL'),
-        'nfl_teams': os.environ.get('AGENT003_URL'),
-        'nfl_scores': os.environ.get('AGENT004_URL'),
-        'nfl_schedule': os.environ.get('AGENT005_URL'),
-        'nfl_stats': os.environ.get('AGENT006_URL'),
-        'nfl_predictions': os.environ.get('AGENT007_URL'),
-    }
-    
-    mcp_clients = {}
-    for client_name, url in mcp_servers.items():
-        if url:
-            try:
-                print(f"Initializing MCP client for {client_name} at {url}")
-                mcp_clients[client_name] = MCPClient(url=url)
-            except Exception as e:
-                print(f"Warning: Failed to initialize MCP client for {client_name}: {e}")
-        else:
-            print(f"Warning: No URL configured for {client_name} (environment variable not set)")
-    
-    return mcp_clients
 
-def _aggregate_tools(mcp_clients):
+
+@asynccontextmanager
+async def create_agent():
+    """Create a Strands agent with AWS IAM-authenticated MCP server access.
+
+    This function demonstrates the key integration pattern:
+    1. Define an aws_iam_streamablehttp_client factory function with the MCP server details
+    2. Initialize a Strands MCPClient with the client factory
+    3. Retrieve the available tools from the MCP server
+    4. Create an agent with access to those tools
+    5. Return a callable interface to communicate with the agent
     """
-    Discover and aggregate tools from all available MCP servers.
-    Returns a list of all available tools.
-    Handles unavailable servers gracefully.
-    """
-    all_tools = []
-    
-    for client_name, client in mcp_clients.items():
+
+    def get_mcp_params(name):
+        runtime_id = os.getenv(name, 'foobar'),
+        logger.info(f"RUNTIMEID: %s", runtime_id[0])
+        agent_arn = f"arn:aws:bedrock-agentcore:{region}:{aws_account_id}:runtime/{runtime_id[0]}"
+        print(agent_arn)
+        # URL encode the ARN using the same method as remote_client.py
+        encoded_arn = agent_arn.replace(":", "%3A").replace("/", "%2F")
+        url = f"https://bedrock-agentcore.{region}.amazonaws.com/runtimes/{encoded_arn}/invocations?qualifier=DEFAULT"
+        print(url)
+        mcp_region = region
+        mcp_service = 'bedrock-agentcore'
+        return url
+
+    # Define an MCP client factory function for AWS IAM authentication
+
+    def agent_factory(agent_id):
+        def mcp_factory():
+            mcp_url = get_mcp_params(agent_id)
+            return aws_iam_streamablehttp_client(
+                endpoint=mcp_url, aws_region=region, aws_service=service
+            )
+        return mcp_factory
+
+    supported_agents = [ "agent002", "agent003", "agent004", "agent005", "agent006", "agent007"]
+    # Create a Strands MCP client and retrieve the tools from the server
+    agent_clients = []
+    for agent_id in supported_agents:
+        factory = agent_factory(agent_id)
+        agent_clients.append(MCPClient(factory))
+
+    with contextlib.ExitStack() as stack:
+        mcp_tools = [current_time]
+        for client in agent_clients:
+            context_client = stack.enter_context(client)
+            mcp_tools.append(context_client.list_tools_sync())
+
+        system_prompt = """You are an NFL game prediction orchestrator with access to specialized tools for weather, schedules, scores, teams, stats, and predictions.
+
+**Operational Workflow:**
+When asked about NFL game predictions or outcomes, follow this sequence:
+
+1. **Identify Teams**: Extract the specific team(s) mentioned in the query
+2. **Get Schedule**: Use getNFLSchedule to find the game details (date, opponent, location)
+3. **Gather Intelligence**: For both teams playing:
+   - Use getNFLScores for recent game results
+   - Use getNFLStats for team/player statistics
+4. **Check Weather**: Use getWeather for the game location
+   - Determine if stadium is domed or outdoor
+   - Get forecast for game day if outdoor
+5. **Generate Prediction**: Use getNFLPrediction with all gathered data
+
+**Example Flow:**
+User: "Will the Giants win this weekend?"
+1. Team: New York Giants
+2. Schedule: Giants @ Lions, Sunday Nov 23
+3. Stats: Get Giants recent scores + Lions recent scores + team stats
+4. Weather: Check Detroit weather (Ford Field is domed - note this)
+5. Prediction: Send all data to predictor
+
+**Guidelines:**
+- Always gather complete data before making predictions
+- Note stadium type (dome vs outdoor) when checking weather
+- If data is missing, explain what's unavailable
+- Be concise but thorough in your analysis"""
+
+        agent = Agent(
+            system_prompt=system_prompt,
+            model=_get_bedrock_model(model_id),
+            tools=mcp_tools,
+            callback_handler=None
+        )
+
+        # Yield a callable interface to the agent
+        async def agent_callable(user_input: str) -> str:
+            """Send a message to the agent and return its response."""
+            result = agent(user_input)
+            return str(result)
+
+        yield agent_callable
+
+
+async def main():
+    """Run the agent example by asking it to list its available tools."""
+    # Validate required environment variables
+    # if not MCP_URL or not MCP_REGION or not MCP_SERVICE:
+    #     raise ValueError(
+    #         'Please set MCP_SERVER_URL, MCP_SERVER_REGION, and MCP_SERVER_AWS_SERVICE environment variables or create an .env file.'
+    #     )
+
+    # Get user input from command line or use default
+    import json
+    if len(sys.argv) > 1:
         try:
-            print(f"Discovering tools from {client_name}")
-            with client:
-                tools = client.list_tools_sync()
-                all_tools.extend(tools)
-                print(f"Found {len(tools)} tool(s) from {client_name}")
-        except Exception as e:
-            print(f"Warning: Failed to retrieve tools from {client_name}: {e}")
-            print(f"Continuing with other available MCP servers...")
-    
-    print(f"Total tools aggregated: {len(all_tools)}")
-    return all_tools
+            event = json.loads(sys.argv[1])
+            user_input = event.get('prompt', 'Whats the weather in NYC')
+        except json.JSONDecodeError:
+            user_input = sys.argv[1]
+    else:
+        user_input = 'Whats the weather in NYC'
 
-# Initialize MCP clients at startup
-print("Initializing MCP clients...")
-mcp_clients = _initialize_mcp_clients()
+    # Create and run the agent
+    async with create_agent() as agent:
+        result = await agent(user_input)
+        print(f'\n{result}')
 
-# Aggregate tools from all MCP servers
-print("Aggregating tools from MCP servers...")
-available_tools = _aggregate_tools(mcp_clients)
 
-@app.entrypoint
-def invoke(payload):
-    """
-    Process user input and return a response.
-    Uses aggregated tools from all available MCP servers.
-    """
-    print("Processing user input")
-    user_message = payload.get("prompt", "Hello! How can I help you today?")
-    
-    # Create agent with all available tools
-    agent = Agent(
-        model=_get_bedrock_model(model_id),
-        tools=available_tools
-    )
-    
-    try:
-        response = agent(user_message)
-        return response
-    except Exception as e:
-        error_message = f"Error processing request: {str(e)}"
-        print(error_message)
-        return {"error": error_message}
-
-if __name__ == "__main__":
-    app.run()
+if __name__ == '__main__':
+    asyncio.run(main())

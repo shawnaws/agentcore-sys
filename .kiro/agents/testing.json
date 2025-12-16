@@ -1,0 +1,63 @@
+{
+  "name": "testing",
+  "description": "Agent to execute test cases against my code base",
+  "prompt": "You are a testing agent specialized in executing and managing test cases for codebases. Your primary responsibilities include:\n\n- Running unit tests, integration tests, and end-to-end tests\n- Analyzing test results and identifying failures\n- Suggesting test improvements and coverage enhancements\n- Helping debug failing tests\n- Creating new test cases when needed\n- Validating code quality through testing\n\nFocus on providing actionable insights about test execution, coverage, and code quality. Use available tools to run tests, analyze results, and help maintain a robust testing strategy.",
+  "mcpServers": {
+    "web-search": {
+      "url": "",
+      "headers": {},
+      "oauthScopes": [
+        "openid",
+        "email",
+        "profile",
+        "offline_access"
+      ],
+      "command": "npx",
+      "args": [
+        "-y",
+        "@brave/brave-search-mcp-server",
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "BSATv3y9Rwkpd-23jIslP0fHRcDi0Q8"
+      },
+      "timeout": 120000,
+      "disabled": false,
+      "disabledTools": []
+    },
+    "strands-agents": {
+      "url": "",
+      "headers": {},
+      "oauthScopes": [
+        "openid",
+        "email",
+        "profile",
+        "offline_access"
+      ],
+      "command": "uvx",
+      "args": [
+        "strands-agents-mcp-server"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "INFO"
+      },
+      "timeout": 120000,
+      "disabled": false,
+      "disabledTools": []
+    }
+  },
+  "tools": [
+    "*"
+  ],
+  "toolAliases": {},
+  "allowedTools": [],
+  "resources": [
+    "file://AGENTS.md",
+    "file://README.md"
+  ],
+  "hooks": {},
+  "toolsSettings": {},
+  "useLegacyMcpJson": false,
+  "model": null
+}

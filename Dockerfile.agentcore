@@ -4,6 +4,8 @@
 # Build stage - ensure ARM64 architecture
 FROM public.ecr.aws/docker/library/python:3.13-slim
 
+RUN apt-get update && apt-get install -y git
+
 # Set working directory
 WORKDIR /app
 

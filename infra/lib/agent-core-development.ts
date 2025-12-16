@@ -75,6 +75,7 @@ interface AgentCoreDevelopmentProps extends StackProps {
   stackBaseName: string
   openApiConfigs: OpenApiConfig[]
   agentConfigs: AgentConfig[]
+  supervisorConfigs?: AgentConfig[]
 }
 
 export class AgentCoreDevelopment extends Stack {
@@ -137,8 +138,10 @@ export class AgentCoreDevelopment extends Stack {
     const openApiTargets = this.createOpenApiTargets(gateway, props, userPool, userPoolClient);
 
     const agents = []
+    const supervisors = []
     for (const config of props?.agentConfigs || []) {
       const agent = this.createRuntimeAgent(config.agentName, config.sourcePath, config, extraVars, userPool, userPoolClient);
+
       this.allowAgentInvokeAmazonAnthropic(agent);
       gateway.grantRead(agent.role)
       gateway.grant(agent.role, 'bedrock-agentcore:InvokeGateway')
@@ -146,11 +149,40 @@ export class AgentCoreDevelopment extends Stack {
     }
 
     for (const agent of agents) {
-
       new cdk.CfnOutput(this, 'RuntimeIdfor' + agent.agentRuntimeName, {
         value: agent.agentRuntimeId
       });
       new cdk.CfnOutput(this, 'RuntimeArnfor' + agent.agentRuntimeName, {
+        value: agent.agentRuntimeArn
+      });
+    }
+
+    for (const superConfig of props?.supervisorConfigs || []) {
+
+      const supervisorVars: EnvVars = {
+        ...extraVars
+      }
+      for (const agent of agents) {
+        supervisorVars[agent.agentRuntimeName] = agent.agentRuntimeId
+      }
+      const supAgent = this.createRuntimeAgent(superConfig.agentName, superConfig.sourcePath, superConfig, supervisorVars, userPool, userPoolClient);
+      this.allowAgentInvokeAmazonAnthropic(supAgent);
+      gateway.grantRead(supAgent.role)
+      gateway.grant(supAgent.role, 'bedrock-agentcore:InvokeGateway')
+      // Grant supervisor permission to invoke regular agents
+      for (const agent of agents) {
+        //agent.grantInvokeRuntime(supAgent)
+        agent.grantInvoke(supAgent)
+      }
+
+      supervisors.push(supAgent)
+    }
+
+    for (const agent of supervisors) {
+      new cdk.CfnOutput(this, 'SupervisorRuntimeIdfor' + agent.agentRuntimeName, {
+        value: agent.agentRuntimeId
+      });
+      new cdk.CfnOutput(this, 'SupervisorRuntimeArnfor' + agent.agentRuntimeName, {
         value: agent.agentRuntimeArn
       });
     }
@@ -257,7 +289,7 @@ export class AgentCoreDevelopment extends Stack {
       let credentialProvider: agentcore.ApiKeyCredentialProviderConfiguration | agentcore.OAuthCredentialProviderConfiguration;
       if (config.authProviderType == AuthProviderType.OAUTH && config.scopes !== undefined) {
         credentialProvider = agentcore.GatewayCredentialProvider.oauth({
-          providerArn: config.providerArn, 
+          providerArn: config.providerArn,
           secretArn: config.secretArn,
           scopes: config?.scopes
         });
@@ -273,7 +305,7 @@ export class AgentCoreDevelopment extends Stack {
       } else {
         throw new Error(`Unknown auth provider type: ${config.authProviderType}`);
       }
-      
+
       credentialProvider.grantNeededPermissionsToRole(gateway.role);
       const targetConfig = agentcore.OpenApiTargetConfiguration.create(schema);
 
@@ -323,40 +355,41 @@ export class AgentCoreDevelopment extends Stack {
         effect: Effect.ALLOW,
         actions: [
           'bedrock:InvokeModel',
-          'bedrock:InvokeModelWithResponseStream'
+          'bedrock:InvokeModelWithResponseStream',
         ],
         resources: [
-          "arn:aws:bedrock:*::foundation-model/anthropic.claude*",
+          "arn:aws:bedrock:*::foundation-model/anthropic.*",
           "arn:aws:bedrock:*::foundation-model/amazon.nova*",
           // Cross-region inference profiles
-          "arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude*",
-          "arn:aws:bedrock:*:*:inference-profile/eu.anthropic.claude*",
+          "arn:aws:bedrock:*:*:inference-profile/us.anthropic.*",
+          "arn:aws:bedrock:*:*:inference-profile/eu.anthropic.*",
           "arn:aws:bedrock:*:*:inference-profile/us.amazon.nova*",
-          "arn:aws:bedrock:*:*:inference-profile/eu.amazon.nova*"
+          "arn:aws:bedrock:*:*:inference-profile/eu.amazon.nova*",
+          "arn:aws:bedrock:*:*:inference-profile/global.anthropic.*",
+          "arn:aws:bedrock:*:*:inference-profile/global.anthropic.*",
         ],
       })
     )
 
-    agent.addToRolePolicy(
-      new cdk.aws_iam.PolicyStatement({
-        effect: Effect.DENY,
-        actions: [
-          'bedrock:InvokeModel',
-          'bedrock:InvokeModelWithResponseStream'
-        ],
-        resources: ['*'],
-        conditions: {
-          StringNotLike: {
-            "bedrock:ModelId": [
-              "anthropic.claude*",
-              "amazon.nova*",
-              "*.anthropic.claude*",
-              "*.amazon.nova*"
-            ]
-          }
-        }
-      })
-    )
+    // agent.addToRolePolicy(
+    //   new cdk.aws_iam.PolicyStatement({
+    //     effect: Effect.DENY,
+    //     actions: [
+    //       'bedrock:InvokeModel',
+    //       'bedrock:InvokeModelWithResponseStream',
+    //       'bedrock:ConverseStream'
+    //     ],
+    //     resources: ['*'],
+    //     conditions: {
+    //       StringNotLike: {
+    //         "bedrock:modelId": [
+    //           "claude*",
+    //           "nova*"
+    //         ]
+    //       }
+    //     }
+    //   })
+    // )
 
     agent.addToRolePolicy(
       new cdk.aws_iam.PolicyStatement({
@@ -364,8 +397,6 @@ export class AgentCoreDevelopment extends Stack {
         actions: [
           "bedrock:ListFoundationModels",
           "bedrock:GetFoundationModel",
-          "bedrock:ListCrossRegionInferenceProfiles",
-          "bedrock:GetCrossRegionInferenceProfile"
         ],
         resources: ["*"]
       })

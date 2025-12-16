@@ -16,20 +16,15 @@ new AgentCoreDevelopment(app, 'AgentCoreDev', {
       authProviderType: AuthProviderType.APIKEY
     },
   ],
-  agentConfigs: [
+  supervisorConfigs: [
     {
       agentName: 'agent001',
       sourcePath: '../../src/agent001',
       envVars: {
-        "USEGATEWAY": "true",
-        "AGENT002_URL": "${GATEWAY_URL}/mcp/agent002",
-        "AGENT003_URL": "${GATEWAY_URL}/mcp/agent003",
-        "AGENT004_URL": "${GATEWAY_URL}/mcp/agent004",
-        "AGENT005_URL": "${GATEWAY_URL}/mcp/agent005",
-        "AGENT006_URL": "${GATEWAY_URL}/mcp/agent006",
-        "AGENT007_URL": "${GATEWAY_URL}/mcp/agent007",
       },
-    },
+    }
+  ],
+  agentConfigs: [
     {
       agentName: 'agent002',
       sourcePath: '../../src/agent002',

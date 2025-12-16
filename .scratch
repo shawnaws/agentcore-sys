@@ -1,1 +1,477 @@
 # Changelog Notes
+
+## 2025-11-06 ~14:30
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Fixed IAM policy for Bedrock model access - updated DENY condition to use explicit region prefixes (us./eu.) instead of wildcard patterns (*.) for cross-region inference profiles. This ensures proper model access control for Anthropic Claude and Amazon Nova models across US and EU regions.
+
+## 2025-11-06 ~14:35
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Refined IAM DENY policy for Bedrock model access - changed from `anthropic.claude*` to `anthropic.*` to allow broader Anthropic model family access (not just Claude). Updated patterns for both direct models and cross-region inference profiles (us.anthropic.*, eu.anthropic.*). This enables support for future Anthropic models beyond the Claude series while maintaining security boundaries.
+
+## 2025-11-06 ~14:40
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Simplified IAM DENY policy condition - changed StringNotLike patterns from full ARN-style patterns (anthropic.*, amazon.nova*, us.anthropic.*, etc.) to simplified model ID patterns (claude*, nova*). This makes the deny condition more maintainable and aligns with how ModelId is actually evaluated in Bedrock API calls.
+
+## 2025-11-06 ~14:45
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Fixed IAM policy condition key casing - corrected "bedrock:ModelId" to "bedrock:modelId" (lowercase 'm'). This ensures the DENY policy condition properly evaluates against the correct IAM condition key for Bedrock model access control.
+
+## 2025-11-06 ~14:50
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added 'bedrock:ConverseStream' action to both ALLOW and DENY IAM policy statements for Bedrock model access. This ensures agents can use the ConverseStream API (in addition to InvokeModel and InvokeModelWithResponseStream) while maintaining the same security boundaries for Anthropic Claude and Amazon Nova models.
+
+## 2025-11-06 ~14:55
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Commented out the DENY policy statement that restricted Bedrock model access to only Claude and Nova models. This removes the model family restriction, allowing agents to invoke any Bedrock foundation model while still maintaining the ALLOW policy for Anthropic and Nova models with cross-region inference profile support.
+
+## 2025-11-06 ~15:00
+**File**: src/agent001/main.py
+**Changes**: Added `_resolve_env_vars()` helper function to resolve environment variable references using ${VAR_NAME} syntax. Updated `_initialize_mcp_clients()` to call this resolver before creating MCPClient instances, enabling dynamic URL resolution from environment variables like ${GATEWAY_URL}. This allows the CDK infrastructure to inject gateway URLs that get properly resolved at runtime.
+
+## 2025-11-06 ~15:05
+**File**: src/agent001/main.py
+**Changes**: Fixed BedrockModel initialization parameter - changed from `inference_profile_id` to `model_id` in the `_get_bedrock_model()` function. This corrects the parameter name to match the Strands BedrockModel API, ensuring proper model initialization for agent001.
+
+## 2025-11-06 ~15:10
+**File**: src/agent006/main.py
+**Changes**: Fixed BedrockModel initialization parameter - changed from `inference_profile_id` to `model_id` in the `_get_bedrock_model()` function. This corrects the parameter name to match the Strands BedrockModel API, ensuring proper model initialization for the NFL Player Statistics agent (agent006).
+
+## 2025-11-06 ~15:15
+**File**: src/agent007/main.py
+**Changes**: File saved with no modifications (empty diff).
+
+## 2025-11-06 ~15:20
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added global Anthropic inference profile ARN patterns to the ALLOW policy for Bedrock model access. Added two entries for "arn:aws:bedrock:*:*:inference-profile/global.anthropic.*" (duplicate entry appears to be unintentional). This enables agents to use globally-distributed Anthropic models via cross-region inference profiles in addition to the existing us. and eu. regional profiles.
+
+## 2025-11-06 ~15:25
+**File**: infra/lib/agent-core-development.ts
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~15:30
+**File**: src/agent001/main.py
+**Changes**: Fixed logging initialization and removed incomplete print statement. Added `logger = app.logger()` at module level to properly initialize the logger from BedrockAgentCoreApp. Removed incomplete print statement on line 66 that was missing the `print()` function call - changed `(f"Initializing MCP client...")` to just the f-string without any function call (appears to be a bug - should likely be `logger.info()` or `print()`).
+
+## 2025-11-06 ~15:35
+**File**: src/agent001/main.py
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~15:40
+**File**: src/agent001/main.py
+**Changes**: Replaced all print() statements with proper logger calls for consistent logging. Changed print() to logger.info() for informational messages (tool discovery, initialization steps) and logger.warning() for warning messages (failed MCP connections). Also changed print() to logger.error() for error messages in the exception handler. This ensures all agent001 logging goes through the BedrockAgentCoreApp logger for proper CloudWatch integration and structured logging.
+
+## 2025-11-06 ~15:45
+**File**: src/agent001/main.py
+**Changes**: Fixed logger initialization - changed from `logger = app.logger()` to `logger = app.logger` (removed parentheses). The logger is a property, not a method, so it should be accessed without calling it as a function. This corrects the AttributeError that would occur when trying to call the logger property.
+
+## 2025-11-06 ~15:50
+**File**: src/agent001/main.py
+**Changes**: Fixed MCPClient initialization syntax error on line 67. Changed from incorrect dictionary-like syntax `MCPClient('{client_name}': streamablehttp_client(resolved_url))` to proper keyword argument syntax `MCPClient(url=resolved_url)`. The previous change introduced invalid Python syntax by attempting to use a dictionary literal as a function argument without proper dict() constructor or **kwargs unpacking.
+
+## 2025-11-06 ~15:55
+**File**: src/agent001/main.py
+**Changes**: Fixed MCPClient initialization - removed incorrect `url=` keyword argument. Changed from `MCPClient(url=resolved_url)` to `MCPClient(streamablehttp_client(resolved_url))`. The MCPClient constructor expects a transport/client object directly as a positional argument, not a URL string with a keyword parameter. This matches the pattern used in other agents and the MCP client API.
+
+## 2025-11-06 ~16:00
+**File**: src/agent001/main.py
+**Changes**: Added missing import statement for streamablehttp_client. Added `from mcp.client.streamable_http import streamablehttp_client` to the imports section. This import is required for the MCPClient initialization that uses `streamablehttp_client(resolved_url)` to create the transport object for MCP connections.
+
+## 2025-11-06 ~16:05
+**File**: src/agent001/main.py
+**Changes**: Re-added missing import for `current_time` tool. Added `from strands_tools import current_time` to the imports section. This import was previously removed but is needed if the agent uses the current_time tool from strands_tools.
+
+## 2025-11-06 ~16:10
+**File**: src/agent001/main.py
+**Changes**: Fixed tool aggregation initialization - added `current_time` tool to the initial `all_tools` list in `_aggregate_tools()` function. Changed from `all_tools = []` to `all_tools = [current_time]`. This ensures the current_time tool is always available to agent001 even if no MCP servers are configured or available, providing baseline time functionality.
+
+## 2025-11-06 ~16:15
+**File**: infra/lib/agent-core-development.ts
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~16:20
+**File**: infra/lib/agent-core-development.ts
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~16:25
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added optional `isSupervisor` boolean field to the `AgentConfig` type interface. This field allows agent configurations to specify whether an agent should act as a supervisor agent, enabling future support for hierarchical agent architectures where supervisor agents can coordinate and delegate to other agents.
+
+## 2025-11-06 ~16:30
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Re-added `const supervisors = []` array declaration in the constructor after the `agents` array. This array was previously removed but is needed for future supervisor agent tracking and management. Currently unused but provides infrastructure for hierarchical agent patterns.
+
+## 2025-11-06 ~16:35
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added empty conditional block for supervisor agent handling. Added `if (config?.isSupervisor !== undefined && config?.isSupervisor == true)` check in the agent configuration loop, but left the block empty (no implementation yet). This provides a placeholder for future supervisor-specific logic while currently allowing all agents (including those marked as supervisors) to be processed through the standard agent creation flow.
+
+## 2025-11-06 ~16:40
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Implemented supervisor agent tracking - added `supervisors.push(agent)` inside the isSupervisor conditional block. When an agent config has `isSupervisor: true`, the agent is now added to the supervisors array after creation. Also cleaned up whitespace formatting in the conditional statement. This completes the supervisor tracking infrastructure, allowing the stack to maintain separate references to supervisor agents for potential future use in hierarchical agent patterns.
+
+## 2025-11-06 ~16:45
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Fixed agent classification logic - moved IAM permissions and gateway grants (allowAgentInvokeAmazonAnthropic, gateway.grantRead, gateway.grant) to execute BEFORE the supervisor/agent classification conditional. Removed duplicate `agents.push(agent)` call that was adding all agents to the agents array regardless of supervisor status. Now agents are correctly added to either the `supervisors` array or the `agents` array based on their `isSupervisor` configuration, not both. This ensures proper separation between supervisor and regular agents.
+
+## 2025-11-06 ~16:50
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added supervisor agent output generation loop. Created a new loop that iterates through supervisor agents and generates CloudFormation outputs for each supervisor's runtime ID (format: 'SupervisorRuntimeId' + agentRuntimeName). Also includes an empty nested loop over regular agents (placeholder for future supervisor-agent relationship logic). This provides visibility into deployed supervisor agents via CDK stack outputs.
+
+## 2025-11-06 ~16:55
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Fixed TypeScript syntax error in supervisor loop. Changed incorrect label syntax `supervisorVars: EnvVars = {}` to proper variable declaration `const supervisorVars: EnvVars = {}`. This corrects the TypeScript compilation error where a label was being used instead of a variable declaration. The supervisorVars variable is intended to hold environment variables for supervisor agents but is currently unused (placeholder for future implementation).
+
+
+## 2025-11-06 ~16:57
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Completed supervisor agent environment variable injection logic. Added code to populate `supervisorVars` with runtime IDs from all regular agents - each agent's runtime name becomes an environment variable key with its runtime ID as the value. This enables supervisor agents to dynamically discover and invoke their subordinate agents at runtime. The loop now properly builds the environment variable mapping: `supervisorVars[sub.agentRuntimeName] = sub.agentRuntimeId`.
+
+## 2025-11-06 ~17:00
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Fixed CloudFormation output naming consistency for supervisor agents. Changed output name from 'RuntimeArnfor' to 'SupervisorRuntimeArn' to match the naming pattern used for 'SupervisorRuntimeId'. This ensures consistent naming convention where supervisor-specific outputs are clearly prefixed with 'Supervisor' (e.g., 'SupervisorRuntimeId' + agentName and 'SupervisorRuntimeArn' + agentName).
+
+## 2025-11-06 ~17:05
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added `supervisorConfigs` property to `AgentCoreDevelopmentProps` interface. This new required property expects an array of `AgentConfigp[]` (note: typo in type name - should be `AgentConfig[]`). This addition enables the stack to accept separate configuration arrays for supervisor agents versus regular agents, supporting hierarchical agent architectures.
+
+## 2025-11-06 ~17:10
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Made `supervisorConfigs` property optional in `AgentCoreDevelopmentProps` interface by adding `?` operator. Changed from `supervisorConfigs: AgentConfig[]` to `supervisorConfigs?: AgentConfig[]`. This allows the stack to be instantiated without providing supervisor configurations, making the supervisor feature opt-in rather than required. Maintains backward compatibility with existing deployments that don't use supervisor agents.
+
+## 2025-11-06 ~17:15
+**File**: infra/bin/infra.ts
+**Changes**: Fixed syntax error and restructured agent configuration. Added missing comma after the closing brace of the supervisorConfigs array. Moved agent001 configuration from agentConfigs to supervisorConfigs array, properly designating it as a supervisor agent that coordinates agent002-007. This corrects the hierarchical agent architecture where agent001 acts as the main chat agent with MCP client connections to all NFL-specific agents (agent002-007).
+
+## 2025-11-06 ~17:20
+**File**: infra/bin/infra.ts
+**Changes**: Removed MCP gateway URL environment variables from agent001 configuration. Changed USEGATEWAY from "true" to "false" and removed all AGENT002_URL through AGENT007_URL environment variables that were using ${GATEWAY_URL}/mcp/agentXXX pattern. This simplifies the agent001 configuration by removing the gateway-based MCP connection setup, likely in preparation for a different connection approach or testing scenario.
+
+## 2025-11-06 ~17:25
+**File**: infra/bin/infra.ts
+**Changes**: Removed USEGATEWAY environment variable from agent001 configuration. Deleted the `"USEGATEWAY": "false"` entry from the envVars object, leaving the envVars object empty. This completes the cleanup of gateway-related configuration from the supervisor agent, as the gateway connection logic is now handled internally by agent001's MCP client initialization code.
+
+## 2025-11-06 ~17:30
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Removed supervisor agent classification and environment variable injection logic. Deleted the conditional block that separated agents into `supervisors` and `agents` arrays based on `isSupervisor` flag. Removed the supervisor loop that generated CloudFormation outputs and built environment variables mapping subordinate agent runtime IDs. This simplifies the agent creation flow by treating all agents uniformly, removing the hierarchical supervisor/subordinate distinction from the infrastructure layer.
+
+## 2025-11-06 ~17:35
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Cleaned up whitespace formatting - removed extra blank lines in the agent configuration loop. Added back empty placeholder loop for supervisor configs processing (`for (const superConfig of props?.supervisorConfigs)`). This maintains the infrastructure for future supervisor-specific logic while keeping the code clean and organized.
+
+## 2025-11-06 ~17:40
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Implemented supervisor agent creation logic. Added null-safe iteration with `|| []` for supervisorConfigs. Implemented full agent creation flow for supervisors: creates runtime agent, grants Bedrock model permissions, grants gateway read/invoke permissions, and adds to agents array. This completes the supervisor agent deployment functionality, allowing agent001 (supervisor) to be properly deployed alongside regular MCP agents (agent002-007).
+
+## 2025-11-06 ~17:45
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Fixed supervisor agent array assignment - changed `agents.push(agent)` to `supervisors.push(agent)` in the supervisorConfigs loop. This ensures supervisor agents are correctly added to the `supervisors` array instead of the `agents` array, maintaining proper separation between supervisor and regular agent types for future hierarchical agent pattern support.
+
+## 2025-11-06 ~17:50
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Implemented environment variable injection for supervisor agents. Added loop that populates `extraVars` with runtime IDs from all regular agents before creating each supervisor agent. Each agent's runtime name becomes an environment variable key with its runtime ID as the value (e.g., `extraVars[agent.agentRuntimeName] = agent.agentRuntimeId`). This enables supervisor agents (like agent001) to dynamically discover and invoke their subordinate MCP agents (agent002-007) at runtime by accessing these environment variables.
+
+## 2025-11-06 ~17:55
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Fixed supervisor environment variable scoping issue. Created separate `supervisorVars` object for each supervisor agent by copying `extraVars` first, then populating it with agent runtime IDs. Changed from mutating shared `extraVars` directly to creating isolated `supervisorVars` per supervisor. This prevents environment variable pollution between multiple supervisor agents and ensures each supervisor gets a clean copy of base environment variables plus the agent runtime mappings.
+
+## 2025-11-06 ~18:00
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added IAM permissions for supervisor agents to invoke subordinate agents. Implemented loop that grants each regular agent's `grantInvokeRuntime()` permission to the supervisor agent after the supervisor is created. This enables supervisor agents (like agent001) to programmatically invoke their subordinate MCP agents (agent002-007) at runtime. The grants are applied after gateway permissions but before adding the supervisor to the supervisors array.
+
+## 2025-11-06 ~18:05
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added CloudFormation output generation for supervisor agents. Created a new loop that iterates through the supervisors array and generates two outputs per supervisor: 'SupervisorRuntimeIdfor' + agentRuntimeName and 'SupervisorRuntimeArnfor' + agentRuntimeName. This provides visibility into deployed supervisor agents via CDK stack outputs, matching the pattern used for regular agents. Also cleaned up whitespace formatting (removed trailing spaces).
+
+## 2025-11-06 ~18:10
+**File**: infra/lib/agent-core-development.ts
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~18:15
+**File**: infra/lib/agent-core-development.ts
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~18:20
+**File**: src/agent001/main.py
+**Changes**: Removed unused `_resolve_env_vars()` helper function that was handling ${VAR_NAME} environment variable resolution. The function was defined but never called after the URL resolution logic was removed from `_initialize_mcp_clients()`. Also removed the comment about resolving ${VAR} references since that functionality is no longer implemented. This cleanup removes dead code that was left behind from previous refactoring.
+
+
+## 2025-11-06 ~18:25
+**File**: src/agent001/main.py
+**Changes**: Updated environment variable names for MCP server URLs in `_initialize_mcp_clients()` function. Changed from uppercase format (AGENT002_URL, AGENT003_URL, etc.) to lowercase format matching agent runtime names (agent002, agent003, etc.). This aligns with the CDK infrastructure's environment variable injection pattern where supervisor agents receive subordinate agent runtime IDs as environment variables using the agent runtime name as the key.
+
+
+## 2025-11-06 ~18:30
+**File**: src/agent001/main.py
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~18:35
+**File**: src/agent001/main.py
+**Changes**: Added AWS account ID and region retrieval. Added `sts = boto3.client('sts')`, `aws_account_id = sts.get_caller_identity()["Account"]`, and `aws_region = session.region_name` after boto3 session initialization. Refactored `_initialize_mcp_clients()` to construct AgentCore runtime URLs from runtime IDs instead of expecting pre-built URLs. Changed variable from `url` to `runtime_id`, and now builds the full AgentCore invocation URL using the pattern: `https://bedrock-agentcore.{region}.amazonaws.com/runtimes/{encoded_arn}/invocations?qualifier=DEFAULT`. This enables agent001 to connect to subordinate MCP agents (agent002-007) using their runtime IDs injected as environment variables by the CDK infrastructure.
+
+## 2025-11-06 ~18:40
+**File**: src/agent001/main.py
+**Changes**: Reverted environment variable names back to uppercase format in `_initialize_mcp_clients()` function. Changed from lowercase (agent002, agent003, etc.) back to uppercase (AGENT002_URL, AGENT003_URL, etc.). This change was made but appears to contradict the previous change at 18:25 which moved to lowercase. The current state now uses uppercase environment variable names again.
+
+## 2025-11-06 ~18:45
+**File**: src/agent001/main.py
+**Changes**: Started refactoring MCP client initialization to use runtime IDs instead of URLs. Changed loop variable from `url` to `runtime_id` and added ARN construction line `agent_arn="arn:aws:bedrock-agentcore:us-west-2:376998848592:runtime/{runtime_id}"`. However, the code is now broken - it references undefined variable `url` on line 64 after renaming the loop variable to `runtime_id`. This is an incomplete refactoring that needs to be completed to construct the full AgentCore invocation URL from the runtime ID.
+
+## 2025-11-06 ~18:50
+**File**: src/agent001/main.py
+**Changes**: Added AWS STS client initialization and account ID retrieval. Added `sts = boto3.client('sts')` and `aws_account_id = sts.get_caller_identity()["Account"]` after the boto3 session initialization. This prepares the infrastructure for constructing AgentCore runtime ARNs dynamically using the actual AWS account ID instead of hardcoding it, enabling the agent to build proper invocation URLs for subordinate MCP agents.
+
+## 2025-11-06 ~18:55
+**File**: src/agent001/main.py
+**Changes**: Added typo variable declaration `retion="us-west-2"` (note: misspelled "region"). This appears to be an incomplete or accidental addition - the variable is declared but never used in the code. The correct variable name should likely be "region" instead of "retion".
+
+## 2025-11-06 ~19:00
+**File**: src/agent001/main.py
+**Changes**: Completed AgentCore runtime URL construction in `_initialize_mcp_clients()`. Added ARN encoding logic (`encoded_arn = agent_arn.replace(":", "%3A").replace("/", "%2F")`) and full MCP URL construction (`mcp_url = f"https://bedrock-agentcore.{region}.amazonaws.com/runtimes/{encoded_arn}/invocations?qualifier=DEFAULT"`). However, the code still references undefined variable `url` on the next line - this needs to be changed to `mcp_url` to complete the refactoring. The agent is now building proper AgentCore invocation URLs from runtime IDs but has a variable name mismatch bug.
+
+
+## 2025-11-06 ~19:05
+**File**: src/agent001/main.py
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~19:10
+**File**: src/agent001/main.py
+**Changes**: Fixed variable reference bug in MCP client initialization. Changed conditional check from `if url:` to `if mcp_url:` to match the actual variable name being used. However, the next line still references undefined variable `url` in `_resolve_env_vars(url)` - this needs to be changed to `mcp_url` to complete the fix. This is a partial fix for the URL construction refactoring that builds AgentCore invocation URLs from runtime IDs.
+
+## 2025-11-06 ~19:15
+**File**: src/agent001/main.py
+**Changes**: Completed MCP client initialization refactoring. Removed the call to `_resolve_env_vars(url)` (which referenced undefined variable) and removed incorrect `url=` keyword argument from MCPClient initialization. Changed from `MCPClient(url=resolved_url)` to `create_streamable_http_transport_sigv4(mcp_url=mcp_url, service_name="bedrock-agentcore", region=region)`. This completes the transition from URL-based MCP client initialization to runtime ID-based initialization with proper AWS SigV4 authentication for AgentCore invocation endpoints. Also fixed the logger.info statement to use `resolved_url` variable (though this variable is no longer defined - needs further fix).
+
+## 2025-11-06 ~19:20
+**File**: src/agent001/main.py
+**Changes**: Fixed typo in variable name - corrected `retion="us-west-2"` to `region="us-west-2"`. This fixes the misspelled variable name that was preventing proper region configuration for AWS service calls. The region variable is used throughout the agent for constructing AgentCore runtime URLs and AWS SigV4 authentication.
+
+## 2025-11-06 ~19:25
+**File**: src/agent001/main.py
+**Changes**: Fixed logger statement variable reference - changed `resolved_url` to `mcp_url` in the logger.info call within `_initialize_mcp_clients()`. This corrects the undefined variable reference that would have caused a NameError. The logger now properly logs the constructed MCP URL when initializing each MCP client connection.
+
+
+## 2025-11-06 ~19:30
+**File**: src/agent001/main.py
+**Changes**: Fixed f-string formatting bug in ARN construction. Added missing 'f' prefix to the agent_arn string literal on line 67, changing from `"arn:aws:bedrock-agentcore:{region}:{aws_account_id}:runtime/{runtime_id}"` to `f"arn:aws:bedrock-agentcore:{region}:{aws_account_id}:runtime/{runtime_id}"`. This corrects the string interpolation so that region, aws_account_id, and runtime_id variables are properly substituted into the ARN instead of being treated as literal text. Critical fix for MCP client initialization to work correctly.
+
+## 2025-11-06 ~19:35
+**File**: src/agent001/main.py
+**Changes**: Added missing import statement for `create_streamable_http_transport_sigv4` function. Added `from remote_client import create_streamable_http_transport_sigv4` to the imports section. This import is required for the MCP client initialization that uses AWS SigV4 authentication to connect to AgentCore runtime endpoints. Without this import, the code would fail with a NameError when attempting to create MCP client transports.
+
+## 2025-11-06 ~19:40
+**File**: src/agent001/main.py
+**Changes**: Fixed import path for `create_streamable_http_transport_sigv4` function. Changed from `from remote_client import create_streamable_http_transport_sigv4` to `from rutils.emote_client import create_streamable_http_transport_sigv4`. This appears to be correcting the module path, though the new path contains what looks like a typo ("rutils.emote_client" instead of likely "utils.remote_client"). This change may introduce an import error if the module path is incorrect.
+
+## 2025-11-06 ~19:45
+**File**: src/agent001/main.py
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~19:50
+**File**: src/agent001/main.py
+**Changes**: Fixed import path for `create_streamable_http_transport_sigv4` function. Added proper Python path manipulation using `sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))` to ensure the utils directory is in the Python path. Changed import from `from utils.remote_client import create_streamable_http_transport_sigv4` to `from remote_client import create_streamable_http_transport_sigv4`. This corrects the previous typo ("rutils.emote_client") and implements a more robust approach to importing from the utils directory by dynamically adding it to sys.path. Also added missing `import sys` at the top of the file.
+
+
+## 2025-11-06 ~19:55
+**File**: src/agent004/main.py
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-06 ~20:00
+**File**: src/agent001/main.py
+**Changes**: Fixed import statement for `create_streamable_http_transport_sigv4` function. Changed from `from remote_client import create_streamable_http_transport_sigv4` to `from utils import create_streamable_http_transport_sigv4`. This corrects the import to properly reference the utils module after the sys.path manipulation, treating utils as a package rather than importing directly from remote_client. This should resolve the import error and properly load the function from the utils/remote_client.py module.
+
+## 2025-11-06 ~20:05
+**File**: src/agent001/main.py
+**Changes**: Reverted import statement back to direct module import. Changed from `from utils import create_streamable_http_transport_sigv4` to `from remote_client import create_streamable_http_transport_sigv4`. This returns to the direct import pattern after the sys.path manipulation adds the utils directory to the Python path, allowing direct import from remote_client module without the utils package prefix. This is the correct approach given the sys.path.insert() that adds '../utils' to the path.
+
+## 2025-11-06 ~20:10
+**File**: src/utils/streamable_http_sigv4.py
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-07 ~09:15
+**File**: src/agent001/main.py
+**Changes**: Fixed async/await syntax error in `_aggregate_tools()` function. Changed `tools = client.list_tools_sync()` to `tools = await client.list_tools_sync()` on line 100. However, this introduces a new issue - the function `_aggregate_tools()` is not declared as async, so using `await` will cause a syntax error. The function needs to be converted to `async def _aggregate_tools()` and all callers need to be updated to await it. This change appears to be incomplete and will break the code.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Made `_initialize_mcp_clients()` function asynchronous by adding `async` keyword to function definition. Changed from `def _initialize_mcp_clients():` to `async def _initialize_mcp_clients():`. This is required because the function uses `await` statements when creating MCP client transports with `create_streamable_http_transport_sigv4()`, which returns an async context manager. This change aligns the function signature with its async implementation.
+
+## 2025-11-07 ~14:35
+**File**: src/agent001/main.py
+**Changes**: Added import statement for `aws_iam_streamablehttp_client` from the `mcp_proxy_for_aws.client` module. This import provides AWS IAM-based authentication capabilities for MCP client connections, enabling the agent to authenticate with AWS services using IAM credentials when establishing MCP transport connections to AgentCore runtime endpoints.
+
+## 2025-11-07 ~14:40
+**File**: src/agent001/main.py
+**Changes**: Replaced MCP client initialization logic to use `aws_iam_streamablehttp_client` factory pattern. Changed from direct `create_streamable_http_transport_sigv4()` call to creating a lambda factory function that returns `aws_iam_streamablehttp_client()` with endpoint, aws_region, and aws_service parameters. The factory is stored in `mcp_clients[client_name]` instead of the transport itself. However, this introduces a bug - the code references undefined variable `service` (should be `"bedrock-agentcore"`). This change aligns with the MCP proxy pattern for AWS IAM authentication but needs the service variable fix to work correctly.
+
+## 2025-11-07 ~14:45
+**File**: src/agent001/main.py
+**Changes**: Fixed async/await syntax error in `_aggregate_tools()` function. Removed incorrect `await` keyword from `client.list_tools_sync()` call on line 107. Changed from `tools = await client.list_tools_sync()` back to `tools = client.list_tools_sync()`. The `list_tools_sync()` method is synchronous (as indicated by the "_sync" suffix), so using `await` was incorrect and would cause a syntax error. This corrects the previous erroneous change that attempted to make the synchronous call asynchronous.
+
+## 2025-11-07 ~14:50
+**File**: src/agent001/main.py
+**Changes**: Fixed import statement for `aws_iam_streamablehttp_client`. Changed from `from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client` to `from mcp_proxy_for_aws import aws_iam_streamablehttp_client`. This corrects the import path to match the actual module structure of the mcp_proxy_for_aws package, where `aws_iam_streamablehttp_client` is exported directly from the package root rather than from a `client` submodule.
+
+## 2025-11-07 ~14:55
+**File**: src/agent001/main.py
+**Changes**: Fixed import statement for `aws_iam_streamablehttp_client`. Changed from `from mcp_proxy_for_aws import aws_iam_streamablehttp_client` back to `from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client`. This corrects the import path to properly reference the `client` submodule within the mcp_proxy_for_aws package, ensuring the function is imported from the correct location for AWS IAM-based MCP client authentication.
+
+## 2025-11-07 ~15:00
+**File**: src/agent001/main.py
+**Changes**: Simplified import statement for mcp_proxy_for_aws package. Changed from `from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client` to `import mcp_proxy_for_aws.client`. This changes from importing a specific function to importing the entire client module, which means the code will need to reference the function as `mcp_proxy_for_aws.client.aws_iam_streamablehttp_client()` instead of just `aws_iam_streamablehttp_client()`. This import style provides clearer namespace visibility but requires updating all call sites to use the fully qualified name.
+
+## 2025-11-07 ~15:05
+**File**: src/agent001/main.py
+**Changes**: Fixed import statement for `aws_iam_streamablehttp_client`. Changed from `import mcp_proxy_for_aws.client` back to `from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client`. This restores the direct function import, allowing the code to call `aws_iam_streamablehttp_client()` directly without the module prefix. This change corrects the import to match the actual usage in the MCP client initialization code where the function is called without qualification.
+
+## 2025-11-07 ~15:10
+**File**: src/agent001/main.py
+**Changes**: Fixed import statement for `aws_iam_streamablehttp_client`. Changed from `from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client` to `from mcp_proxy_for_aws import aws_iam_streamablehttp_client`. Also added missing `import boto3` statement that was accidentally removed in a previous edit. This corrects the import path to match the package structure where `aws_iam_streamablehttp_client` is exported from the package root, and restores the boto3 import needed for AWS session and STS client initialization.
+
+## 2025-11-07 ~15:15
+**File**: src/agent001/main.py
+**Changes**: Fixed import statement for `aws_iam_streamablehttp_client`. Changed from `from mcp_proxy_for_aws import aws_iam_streamablehttp_client` to `from mcp_proxy_for_aws.middleware import aws_iam_streamablehttp_client`. This corrects the import path to reference the `middleware` submodule within the mcp_proxy_for_aws package, which is the actual location of the AWS IAM streamable HTTP client function used for authenticating MCP connections to AgentCore runtime endpoints.
+
+## 2025-11-07 ~15:20
+**File**: src/agent001/main.py
+**Changes**: Fixed import statement for `aws_iam_streamablehttp_client`. Changed from `from mcp_proxy_for_aws.middleware import aws_iam_streamablehttp_client` to `from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client`. This corrects the import path to reference the `client` submodule (not `middleware`) within the mcp_proxy_for_aws package, which is the correct location of the AWS IAM streamable HTTP client function used for authenticating MCP connections to AgentCore runtime endpoints.
+
+## 2025-11-07 ~15:25
+**File**: src/agent001/main.py
+**Changes**: Fixed MCP client initialization to properly wrap the factory function. Changed from `mcp_clients[client_name] = mcp_client_factory` to `mcp_clients[client_name] = MCPClient(mcp_client_factory)`. This corrects the MCP client instantiation by passing the factory function to the MCPClient constructor, which is the proper way to initialize an MCP client with a transport factory. The previous code was storing the raw factory function instead of an initialized MCPClient instance, which would cause errors when trying to use the client for tool discovery and invocation.
+
+## 2025-11-07 ~15:30
+**File**: src/agent001/main.py
+**Changes**: Refactored MCP client initialization to inline the lambda factory function. Removed the intermediate `mcp_client_factory` variable and directly passed the lambda function to `MCPClient()` constructor. Changed from creating `mcp_client_factory = lambda: aws_iam_streamablehttp_client(...)` then `MCPClient(mcp_client_factory)` to a single line: `MCPClient(lambda: aws_iam_streamablehttp_client(...))`. This simplifies the code by eliminating an unnecessary variable while maintaining the same functionality - creating an MCP client with a factory function that returns an AWS IAM-authenticated streamable HTTP client for AgentCore runtime connections.
+
+## 2025-11-07 ~15:35
+**File**: src/agent001/main.py
+**Changes**: Fixed undefined variable bug in MCP client initialization. Changed `aws_service=service` to `aws_service='bedrock-agentcore'` on line 86. The previous code referenced an undefined variable `service`, which would cause a NameError at runtime. This fix hardcodes the AWS service name to 'bedrock-agentcore', which is the correct service identifier for AgentCore runtime invocations. This completes the MCP client initialization refactoring to use AWS IAM authentication via the mcp_proxy_for_aws package.
+
+## 2025-11-07 ~15:40
+**File**: src/agent001/main.py
+**Changes**: Removed ARN URL encoding logic from MCP client initialization. Changed from encoding the ARN with `encoded_arn = agent_arn.replace(":", "%3A").replace("/", "%2F")` and using it in the URL to directly embedding the unencoded ARN in the URL. Changed `mcp_url` construction from using `{encoded_arn}` to using `{agent_arn}` directly. This simplification removes unnecessary URL encoding since the aws_iam_streamablehttp_client likely handles URL encoding internally, or the AgentCore endpoint accepts unencoded ARNs in the path.
+
+## 2025-11-07 ~15:45
+**File**: src/agent001/main.py
+**Changes**: Commented out ARN URL encoding logic in MCP client initialization. Added comment marker `#` before the line `encoded_arn = agent_arn.replace(":", "%3A").replace("/", "%2F")`, effectively disabling the ARN encoding step. The `mcp_url` construction now uses the unencoded `agent_arn` directly in the URL path. This change preserves the encoding logic as a comment for potential future reference while keeping the simplified approach of using unencoded ARNs in AgentCore runtime invocation URLs.
+
+## 2025-11-07 ~15:50
+**File**: src/agent001/main.py
+**Changes**: Re-enabled ARN URL encoding in MCP client initialization. Uncommented and updated the encoding logic to use Python's `urllib.parse.quote()` function instead of manual string replacement. Changed from commented-out `encoded_arn = agent_arn.replace(":", "%3A").replace("/", "%2F")` to active `encoded_arn = quote(agent_arn, safe='')`. Added `from urllib.parse import quote` import statement inline. Updated `mcp_url` construction to use `{encoded_arn}` instead of `{agent_arn}`. Added explanatory comment: "URL encode the ARN for the path - the library doesn't do this automatically". This ensures proper URL encoding of the ARN before embedding it in the AgentCore runtime invocation endpoint URL.
+
+## 2025-11-07 ~15:55
+**File**: src/agent001/main.py
+**Changes**: Simplified ARN URL encoding method in MCP client initialization. Changed from using Python's `urllib.parse.quote()` function with inline import to using simple string replacement method. Replaced `from urllib.parse import quote` and `encoded_arn = quote(agent_arn, safe='')` with `encoded_arn = agent_arn.replace(":", "%3A").replace("/", "%2F")`. Updated comment from "URL encode the ARN for the path - the library doesn't do this automatically" to "URL encode the ARN using the same method as remote_client.py". This change maintains the same URL encoding functionality while removing the external import dependency and aligning with the encoding pattern used elsewhere in the codebase.
+
+## 2025-11-07 ~16:00
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Added full mesh IAM permissions for supervisor-to-supervisor invocations. Implemented nested loop that grants each supervisor agent permission to invoke all other supervisor agents using `grantInvokeRuntime()`. This creates a fully connected mesh topology where any supervisor can invoke any other supervisor, enabling hierarchical agent patterns where supervisors can delegate to or coordinate with peer supervisors. The logic uses an identity check (`if (supervisor !== otherSupervisor)`) to avoid granting self-invocation permissions. Also cleaned up whitespace formatting in the supervisor configuration loop for better code readability.
+
+## 2025-11-07 ~16:05
+**File**: src/agent001/main.py
+**Changes**: Fixed Python lambda closure bug in MCP client initialization. Added default argument `url=mcp_url` to the lambda function to capture the loop variable value at definition time instead of reference time. Changed from `lambda: aws_iam_streamablehttp_client(endpoint=mcp_url, ...)` to `lambda url=mcp_url: aws_iam_streamablehttp_client(endpoint=url, ...)`. This prevents late binding issues where all lambda functions would reference the final value of `mcp_url` from the loop instead of their respective values. Critical fix to ensure each MCP client connects to the correct agent endpoint rather than all clients connecting to the last agent in the loop.
+
+
+## 2025-11-07 ~14:30
+**File**: src/utils/remote_client.py
+**Changes**: File saved with no modifications (empty diff). No changes detected between previous and current state.
+
+## 2025-11-07 ~16:10
+**File**: src/agent002/main.py
+**Changes**: Removed unused import statement. Deleted `from utils import streamable_http_sigv4` import line that was not being used anywhere in the agent002 code. This cleanup removes dead import that was likely left over from previous refactoring or copy-paste from another agent file. The agent002 weather MCP server doesn't require this utility since it doesn't implement AWS SigV4 authentication for its MCP client connections.
+
+## 2025-11-07 ~16:15
+**File**: src/agent002/main.py
+**Changes**: Commented out unused AWSCognitoProvider configuration block. Disabled the auth_provider initialization code that was configuring AWS Cognito OAuth2 authentication with user pool ID, client credentials, and callback URL settings. This code was not being used in the agent002 weather MCP server implementation and was likely a template or placeholder from initial setup. Commenting it out removes clutter while preserving the configuration pattern for potential future reference if OAuth2 authentication is needed for this agent.
+
+## 2025-11-07 ~16:20
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Cleaned up IAM policy for Bedrock model access by removing unused API actions. Removed 'bedrock:ConverseStream' from the ALLOW policy statement (line 366) and removed 'bedrock:ListCrossRegionInferenceProfiles' and 'bedrock:GetCrossRegionInferenceProfile' from the list/get permissions policy statement (lines 408-409). Also cleaned up whitespace formatting by removing trailing blank line in supervisor configuration loop (line 161). These changes simplify the IAM permissions by removing actions that are not currently used by the agents, reducing the permission surface area while maintaining all necessary Bedrock model invocation capabilities (InvokeModel, InvokeModelWithResponseStream) and basic model discovery (ListFoundationModels, GetFoundationModel).
+
+## 2025-11-07 ~16:25
+**File**: infra/lib/agent-core-development.ts
+**Changes**: Simplified supervisor-to-agent IAM permissions and removed supervisor mesh topology. Changed from `agent.grantInvokeRuntime(supAgent)` to `agent.grantInvoke(supAgent)` for granting supervisor agents permission to invoke subordinate agents. Removed the full mesh permission logic that granted all supervisors permission to invoke each other (`for (const supervisor of supervisors) { for (const otherSupervisor of supervisors) { ... } }`). This simplifies the IAM permission model by using the simpler `grantInvoke()` method instead of `grantInvokeRuntime()`, and removes the supervisor-to-supervisor invocation capability, focusing the architecture on a single-level hierarchy where supervisors coordinate subordinate agents but don't invoke peer supervisors.
+
+
+## 2025-11-07 ~16:30
+**File**: src/agent001/main.py
+**Changes**: Commented out entire MCP client initialization and tool aggregation logic. Disabled `_initialize_mcp_clients()` function implementation by commenting out all code within the function (lines 70-95), leaving only the function signature and docstring. Also commented out the function calls at module level that initialized MCP clients and aggregated tools (lines 121-127). Moved MCP client initialization logic into the `invoke()` entrypoint function for on-demand initialization per request. This refactoring changes from startup-time MCP client initialization to request-time initialization, potentially improving cold start performance but adding latency to each request. The new approach creates a single MCP client for agent002 within each invocation rather than maintaining persistent connections to all subordinate agents.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Fixed MCP client usage pattern in the invoke() entrypoint function. Changed from storing MCPClient in a dictionary (`mcp_clients[client_name]`) to using it directly as `mcp_client`. Wrapped the tool discovery and agent creation in a `with mcp_client:` context manager to ensure proper connection lifecycle management. Updated agent tools initialization from `tools=available_tools` to `tools=[current_time, mcp_tools]`, where `mcp_tools` is retrieved via `mcp_client.list_tools_sync()` within the context manager. This ensures the MCP client connection is properly opened, tools are discovered, and the connection is closed after agent creation, following proper MCP client usage patterns.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Fixed indentation for error handling block in the `invoke()` function. Moved the try-except block inside the `with mcp_client:` context manager by adding 4 spaces of indentation. This ensures proper exception handling occurs within the MCP client context, preventing potential resource leaks if errors occur during agent execution. The try-except now correctly catches errors that happen while the MCP client connection is active.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Fixed MCPClient initialization - removed lambda wrapper from aws_iam_streamablehttp_client call. Changed from `MCPClient(lambda: aws_iam_streamablehttp_client(...))` to `MCPClient(aws_iam_streamablehttp_client(...))`. The MCPClient constructor expects a transport/client object directly, not a lambda function that returns one. This corrects the initialization pattern to match the mcp_proxy_for_aws library's expected usage where aws_iam_streamablehttp_client returns a ready-to-use transport object.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Removed MCP client context manager usage in the invoke() function. Changed from using `with mcp_client:` context manager to calling `mcp_client.list_tools_sync()` directly without the context. This simplifies the MCP client lifecycle management by removing the explicit context manager block and unindenting the agent creation and execution logic. The MCP client is now used directly for tool discovery without wrapping the entire agent execution in the context manager scope.
+
+
+## 2025-11-07 ~16:35
+**File**: src/agent001/main.py
+**Changes**: Major refactoring - replaced entire agent implementation with async example pattern from mcp_proxy_for_aws. Commented out all existing code including BedrockAgentCoreApp initialization, MCP client setup, tool aggregation, and the invoke() entrypoint. Replaced with new async implementation featuring: `create_agent()` async context manager that creates a Strands agent with AWS IAM-authenticated MCP server access, `main()` async function that validates environment variables (MCP_URL, MCP_REGION, MCP_SERVICE) and runs the agent, and asyncio.run(main()) entry point. This completely changes the agent architecture from a synchronous BedrockAgentCore-based agent to an async standalone agent using the mcp_proxy_for_aws example pattern. The new implementation is missing required imports (asynccontextmanager, asyncio) and environment variable definitions (MCP_URL, MCP_REGION, MCP_SERVICE), making it non-functional in its current state.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Added missing import statements for `asyncio` and `dotenv` modules. These imports were added to support asynchronous operations and environment variable loading from .env files. The asyncio import is required for the async/await pattern used in the `create_agent()` and `main()` functions, while dotenv enables loading configuration from .env files for local development.
+
+
+## 2025-11-07 ~16:40
+**File**: src/agent001/main.py
+**Changes**: Added MCP URL construction logic to the `create_agent()` async function. Implemented runtime ID retrieval from environment variable 'agent002', ARN construction using f-string with region and aws_account_id variables, ARN URL encoding (replacing ":" with "%3A" and "/" with "%2F"), and full MCP URL construction following the pattern: `https://bedrock-agentcore.{region}.amazonaws.com/runtimes/{encoded_arn}/invocations?qualifier=DEFAULT`. This enables the async agent implementation to dynamically build AgentCore runtime invocation URLs from runtime IDs, matching the pattern used in the commented-out synchronous implementation. The MCP_URL variable is now constructed programmatically instead of being read from environment variables.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Moved MCP connection configuration variables (runtime_id, agent_arn, encoded_arn, MCP_URL, MCP_REGION, MCP_SERVICE) from inside the `create_agent()` async context manager to module-level scope. This refactoring makes these configuration values available globally at module initialization time instead of being computed each time the agent is created. The variables are now defined once at import time, improving efficiency and making the configuration more accessible throughout the module.
+
+
+## 2025-11-07 ~16:45
+**File**: src/agent001/main.py
+**Changes**: Added debug logging statement for runtime_id variable. Inserted `logger.info(f"RUNTIMEID: {runtime_id}")` immediately after the runtime_id assignment to help troubleshoot MCP client initialization issues. This log statement will output the runtime ID value retrieved from the 'agent002' environment variable, making it easier to verify that the correct runtime ID is being passed to the ARN construction logic for AgentCore invocation URL building.
+ prefix.
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Enhanced logger output formatting for runtime ID debugging. Added newline characters before and after the runtime ID log message, changing from `logger.info(f"RUNTIMEID: {runtime_id}")` to `logger.info(f"\nRUNTIMEID: {runtime_id}\n")`. This improves log readability by visually separating the runtime ID output from surrounding log entries, making it easier to identify during debugging and troubleshooting of MCP client initialization.
+
+
+## 2025-11-07 ~16:50
+**File**: src/agent001/main.py
+**Changes**: Fixed environment variable retrieval method for runtime_id. Changed from `os.environ.get('agent002'),` to `os.getenv('agent002', 'foobar'),`. This change uses `os.getenv()` instead of `os.environ.get()` (both are functionally equivalent) and adds a default fallback value of 'foobar' if the 'agent002' environment variable is not set. Also removed the trailing comma that was creating a tuple instead of a string. This ensures runtime_id is always a string value rather than potentially being a tuple, which would cause errors in the subsequent ARN construction logic.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Cleaned up logger formatting - removed extra newline characters from logger.info statement. Changed from `logger.info(f"\nRUNTIMEID: {runtime_id}\n")` to `logger.info(f"RUNTIMEID: {runtime_id}")`. This improves log output readability by removing unnecessary blank lines around the runtime ID debug message.
+
+## 2025-11-07 ~16:55
+**File**: src/agent001/main.py
+**Changes**: Fixed f-string syntax error in logger statement. Changed from `logger.info(f"RUNTIMEID: {runtime_id}")` to `logger.info(f"RUNTIMEID: %s", runtime_id)`. This corrects the logging format to use printf-style formatting with `%s` placeholder instead of f-string interpolation. The change prevents potential f-string syntax errors and aligns with standard Python logging best practices where the string formatting is deferred until the log message is actually emitted, improving performance when logging is disabled.
+
+
+## 2025-11-07 ~17:00
+**File**: src/agent001/main.py
+**Changes**: Fixed runtime_id tuple indexing in logger statement. Changed from `logger.info(f"RUNTIMEID: %s", runtime_id)` to `logger.info(f"RUNTIMEID: %s", runtime_id[0])`. This corrects the logging to access the first element of the runtime_id tuple (which is created by the trailing comma in `os.getenv('agent002', 'foobar'),`). The change ensures the logger outputs the actual runtime ID string value instead of the tuple representation, fixing the display format in log output.
+
+
+## 2025-11-07 ~17:05
+**File**: src/agent001/main.py
+**Changes**: Fixed ARN construction to use tuple-indexed runtime_id. Changed from `agent_arn=f"arn:aws:bedrock-agentcore:{region}:{aws_account_id}:runtime/{runtime_id}"` to `agent_arn=f"arn:aws:bedrock-agentcore:{region}:{aws_account_id}:runtime/{runtime_id[0]}"`. This corrects the ARN construction to access the first element of the runtime_id tuple (created by the trailing comma in the os.getenv() call). Without this fix, the ARN would embed the tuple representation instead of the actual runtime ID string, causing invalid ARN format errors when constructing the AgentCore invocation URL.
+
+
+## 2025-11-07 ~14:30
+**File**: src/agent001/main.py
+**Changes**: Updated test query in main() function - changed from 'Show me your available tools.' to 'Whats the weather in NYC'. This modifies the example query used when running the agent directly to test the weather MCP tool integration instead of listing available tools.

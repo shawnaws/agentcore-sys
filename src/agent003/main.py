@@ -1,6 +1,6 @@
 import os
 from strands import Agent
-from strands_tools import http_request
+from strands_tools import http_request, current_time
 from strands.models import BedrockModel
 from mcp.server.fastmcp import FastMCP
 import boto3
@@ -39,7 +39,7 @@ mcp = FastMCP("NFL Teams Server", host="0.0.0.0", stateless_http=True)
 
 def _get_bedrock_model(m_id):
     return BedrockModel(
-        inference_profile_id=m_id,
+        model_id=m_id,
         temperature=0.0,
         streaming=True,
         boto_session=session
@@ -60,9 +60,10 @@ def getNFLTeams(teamQuery: str) -> str:
     agent = Agent(
         system_prompt=ESPN_NFL_SYSTEM_PROMPT,
         model=_get_bedrock_model(model_id),
-        tools=[http_request]
+        tools=[http_request, current_time]
     )
-    return agent(teamQuery)
+    result = agent(teamQuery)
+    return str(result)
 
 if __name__ == "__main__":
     mcp.run(transport="streamable-http")

@@ -7,6 +7,7 @@ from strands import Agent
 from strands.models import BedrockModel
 from mcp.server.fastmcp import FastMCP
 import boto3
+from strands_tools import current_time
 
 # Import custom HTTP request with retry logic
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
@@ -120,7 +121,7 @@ mcp = FastMCP("NFL Schedule Server", host="0.0.0.0", stateless_http=True)
 
 def _get_bedrock_model(m_id):
     return BedrockModel(
-        inference_profile_id=m_id,
+        model_id=m_id,
         temperature=0.0,
         streaming=True,
         boto_session=session
@@ -145,11 +146,11 @@ def getNFLSchedule(scheduleQuery: str) -> str:
         agent = Agent(
             system_prompt=ESPN_NFL_SCHEDULE_SYSTEM_PROMPT,
             model=_get_bedrock_model(model_id),
-            tools=[http_request_with_retry]
+            tools=[http_request_with_retry, current_time]
         )
         result = agent(scheduleQuery)
         logger.info("getNFLSchedule completed successfully", extra={"tool": "getNFLSchedule"})
-        return result
+        return str(result)
     except Exception as e:
         error_msg = str(e)
         logger.error(

@@ -1,3 +1,5 @@
 strands-agents
+strands-agents-tools
 bedrock-agentcore
+mcp_proxy_for_aws @ git+https://github.com/aws/mcp-proxy-for-aws.git
 boto3

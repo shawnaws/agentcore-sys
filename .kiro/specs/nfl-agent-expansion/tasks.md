@@ -51,7 +51,7 @@
   - Add defensive parsing with try-catch blocks for ESPN API responses
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [x] 8. Implement Data Formatting Standards
+- [-] 8. Implement Data Formatting Standards
   - Add date/time formatting functions for user-friendly display (e.g., "Sunday, January 15, 2025 at 4:30 PM EST")
   - Implement team name formatting with full names and abbreviations
   - Add score highlighting and game status formatting for live and completed games

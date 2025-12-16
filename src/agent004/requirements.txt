@@ -1,6 +1,6 @@
-bedrock-agentcore-runtime
-strands
-strands-tools
+bedrock-agentcore
+strands-agents
+strands-agents-tools
 mcp
 boto3
 pytz

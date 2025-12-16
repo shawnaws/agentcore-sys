@@ -11,6 +11,7 @@ from datetime import datetime
 from strands import Agent
 from strands.models import BedrockModel
 from mcp.server.fastmcp import FastMCP
+from strands_tools import current_time
 
 # Import custom HTTP request with retry logic
 import os
@@ -140,14 +141,14 @@ mcp = FastMCP("NFL Predictions Server", host="0.0.0.0", stateless_http=True)
 def _get_bedrock_model(m_id):
     """Initialize and return a Bedrock model instance."""
     return BedrockModel(
-        inference_profile_id=m_id,
+        model_id=m_id,
         temperature=0.0,
         streaming=True,
         boto_session=session
     )
 
 
-@mcp.tool(description="Generate AI-powered predictions for upcoming NFL games with win probability and analysis")
+@mcp.tool(description="Generate AI-powered predictions for upcoming NFL games with win probability and analysis. Must provide teams, and dates.")
 def predictNFLGame(matchupQuery: str) -> str:
     """
     Generate predictions for upcoming NFL games with error handling and retries.
@@ -165,11 +166,11 @@ def predictNFLGame(matchupQuery: str) -> str:
         agent = Agent(
             system_prompt=ESPN_NFL_PREDICTIONS_SYSTEM_PROMPT,
             model=_get_bedrock_model(model_id),
-            tools=[http_request_with_retry]
+            tools=[http_request_with_retry, current_time]
         )
         result = agent(matchupQuery)
         logger.info("predictNFLGame completed successfully", extra={"tool": "predictNFLGame"})
-        return result
+        return str(result)
     except Exception as e:
         error_msg = str(e)
         logger.error(
